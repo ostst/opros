@@ -826,39 +826,46 @@
           return;
         }
 
-        const app = initializeApp(FIREBASE_CONFIG);
-        auth = getAuth(app);
-        await signInAnonymously(auth);
-        db = getFirestore(app);
-        pollRef = doc(db, POLL_DOC[0], POLL_DOC[1]);
+        try {
+          const app = initializeApp(FIREBASE_CONFIG);
+          auth = getAuth(app);
+          await signInAnonymously(auth);
+          db = getFirestore(app);
+          pollRef = doc(db, POLL_DOC[0], POLL_DOC[1]);
 
-        let snap = await getDoc(pollRef);
-        if (!snap.exists()) {
-          await setDoc(pollRef, defaultPoll());
-          snap = await getDoc(pollRef);
-        }
-
-        const uid = auth.currentUser.uid;
-        const submissionRef = doc(db, POLL_DOC[0], POLL_DOC[1], "submissions", uid);
-        const alreadySubmitted = await getDoc(submissionRef);
-        if (alreadySubmitted.exists()) userDone = true;
-
-        await countVisitorOnce(auth);
-
-        const latest = await getDoc(pollRef);
-        syncFromPoll(latest.exists() ? latest.data() : defaultPoll());
-
-        unsub = onSnapshot(
-          pollRef,
-          (docSnap) => {
-            if (docSnap.exists()) syncFromPoll(docSnap.data());
-            else syncFromPoll(defaultPoll());
-          },
-          (err) => {
-            console.error(err);
-            liveMeta.textContent = "Ошибка подписки на данные";
+          let snap = await getDoc(pollRef);
+          if (!snap.exists()) {
+            await setDoc(pollRef, defaultPoll());
+            snap = await getDoc(pollRef);
           }
-        );
+
+          const uid = auth.currentUser.uid;
+          const submissionRef = doc(db, POLL_DOC[0], POLL_DOC[1], "submissions", uid);
+          const alreadySubmitted = await getDoc(submissionRef);
+          if (alreadySubmitted.exists()) userDone = true;
+
+          // Сначала показываем вопросы; учёт визита — отдельной транзакцией (не блокирует первый экран).
+          syncFromPoll(snap.exists() ? snap.data() : defaultPoll());
+
+          countVisitorOnce(auth).catch((e) => console.error("visitor count:", e));
+
+          unsub = onSnapshot(
+            pollRef,
+            (docSnap) => {
+              if (docSnap.exists()) syncFromPoll(docSnap.data());
+              else syncFromPoll(defaultPoll());
+            },
+            (err) => {
+              console.error(err);
+              if (liveMeta) liveMeta.textContent = "Ошибка подписки на данные";
+            }
+          );
+        } catch (e) {
+          console.error(e);
+          surveyRoot.innerHTML =
+            `<p class="kicker">Опрос · HR и ОПК</p>
+            <p class="err" style="margin:0">Не удалось загрузить опрос. Проверьте сеть, домен в Firebase (Authorized domains) и что включён анонимный вход. ${esc(String(e && (e.message || e.code) || e))}</p>`;
+        }
       }
 
       init();
