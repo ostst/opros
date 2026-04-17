@@ -482,6 +482,7 @@
     </div>
 
     <script src="assets/firebase-config.js"></script>
+    <script src="assets/poll-helpers.js"></script>
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
       import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
@@ -499,89 +500,8 @@
       const FIREBASE_CONFIG = FB?.config;
       const POLL_DOC = FB?.pollDoc ?? ["poll", "main"];
 
-      const QUESTIONS = [
-        {
-          text:
-            "С каким ключевым вызовом в управлении персоналом на предприятиях ОПК вы сталкиваетесь сегодня?",
-          options: [
-            { key: "a", letter: "А", text: "Кадровый голод: острая нехватка инженеров и рабочих на фоне роста гособоронзаказа." },
-            { key: "b", letter: "Б", text: "Устаревшие HR-процессы: сложность внедрения цифровых решений из-за «режимки» и бюрократии." },
-            { key: "c", letter: "В", text: "Профессиональное выгорание: собственное и ключевых сотрудников из-за высокого стресса и ответственности." },
-            { key: "d", letter: "Г", text: "Конкуренция с ИТ и «гражданкой»: не можем предложить сопоставимые зарплаты и условия." },
-          ],
-        },
-        {
-          text:
-            "Чего, на ваш взгляд, больше всего не хватает HR-лидерам ОПК для эффективной трансформации отрасли?",
-          options: [
-            { key: "a", letter: "А", text: "Единой площадки для обмена реальными кейсами и практиками (чтобы не «изобретать велосипед»)." },
-            { key: "b", letter: "Б", text: "Консолидированной позиции для диалога с государством (GR) по вопросам квот, брони, целевого набора." },
-            { key: "c", letter: "В", text: "Доступа к актуальным образовательным программам, созданным специально для ОПК." },
-            { key: "d", letter: "Г", text: "«Безопасной среды» для обсуждения провалов, рисков и сложных управленческих дилемм." },
-          ],
-        },
-        {
-          text: "Какой формат взаимодействия в рамках профессионального сообщества был бы для вас наиболее ценным?",
-          options: [
-            { key: "a", letter: "А", text: "Закрытые встречи и мозговые штурмы (офлайн) для решения конкретных задач с равными по статусу коллегами." },
-            { key: "b", letter: "Б", text: "Отраслевой банк знаний с доступом к проверенным методикам, кейсам и шаблонам документов." },
-            { key: "c", letter: "В", text: "Совместная разработка предложений для Минпромторга, Минобрнауки и других регуляторов." },
-            { key: "d", letter: "Г", text: "Менторская поддержка от более опытных коллег и доступ к отраслевым экспертам." },
-          ],
-        },
-        {
-          text:
-            "Какую компетенцию или ресурс вы лично были бы готовы привнести в закрытое сообщество лидеров ОПК?",
-          options: [
-            { key: "a", letter: "А", text: "Делиться опытом внедрения HR-проектов (успешным и не очень)." },
-            { key: "b", letter: "Б", text: "Участвовать в формировании GR-повестки и работе с регуляторами." },
-            { key: "c", letter: "В", text: "Выступать в роли эксперта или ментора по своему профилю." },
-            { key: "d", letter: "Г", text: "Пока готов(-а) только слушать и учиться (это важный «безопасный» вариант, который позволит ответить честно большинству)." },
-          ],
-        },
-      ];
-
-      const KEYS = ["a", "b", "c", "d"];
-
-      const SHORT = [
-        [
-          ["А", "Кадровый голод…"],
-          ["Б", "Устаревшие HR-процессы…"],
-          ["В", "Выгорание…"],
-          ["Г", "Конкуренция с ИТ…"],
-        ],
-        [
-          ["А", "Площадка для кейсов…"],
-          ["Б", "Позиция GR…"],
-          ["В", "Образование для ОПК…"],
-          ["Г", "Безопасная среда…"],
-        ],
-        [
-          ["А", "Офлайн-встречи…"],
-          ["Б", "Банк знаний…"],
-          ["В", "Предложения регуляторам…"],
-          ["Г", "Менторство…"],
-        ],
-        [
-          ["А", "Опыт HR-проектов…"],
-          ["Б", "GR-повестка…"],
-          ["В", "Эксперт / ментор…"],
-          ["Г", "Только слушать…"],
-        ],
-      ];
-
       function defaultPoll() {
-        return {
-          totals: {
-            q0: { a: 0, b: 0, c: 0, d: 0 },
-            q1: { a: 0, b: 0, c: 0, d: 0 },
-            q2: { a: 0, b: 0, c: 0, d: 0 },
-            q3: { a: 0, b: 0, c: 0, d: 0 },
-          },
-          submissionCount: 0,
-          visitorCount: 0,
-          sessionClosed: false,
-        };
+        return window.OPK_poll.normalizePoll({});
       }
 
       function esc(s) {
@@ -648,15 +568,17 @@
         return pollData.sessionClosed === true;
       }
 
-      function pctFor(totals, k, sum) {
-        const v = totals[k] || 0;
+      function pctOption(row, oi, sum) {
+        const v = OPK_poll.getCount(row, oi);
         if (sum <= 0) return 0;
         return Math.round((v / sum) * 1000) / 10;
       }
 
       function renderLive(data) {
         const closed = data && data.sessionClosed === true;
-        const totals = data.totals || defaultPoll().totals;
+        const norm = window.OPK_poll.normalizePoll(data || {});
+        const totals = norm.totals || {};
+        const questions = norm.questions || [];
         if (liveTitle) liveTitle.textContent = closed ? "Итоги опроса" : "Статистика";
         if (liveMeta) {
           liveMeta.innerHTML = closed
@@ -665,28 +587,30 @@
         }
 
         let html = "";
-        for (let qi = 0; qi < 4; qi++) {
-          const t = totals["q" + qi] || { a: 0, b: 0, c: 0, d: 0 };
-          const sum = KEYS.reduce((s, key) => s + (t[key] || 0), 0);
+        questions.forEach((q, qi) => {
+          const row = totals["q" + qi] || {};
+          const nOpt = (q.options || []).length;
+          const sum = OPK_poll.sumRow(row);
           let maxP = 1;
-          KEYS.forEach((k) => {
-            const p = pctFor(t, k, sum);
+          for (let oi = 0; oi < nOpt; oi++) {
+            const p = pctOption(row, oi, sum);
             if (p > maxP) maxP = p;
-          });
-          html += `<div class="mini-block"><p class="mini-q">${esc(QUESTIONS[qi].text)}</p>`;
-          for (let oi = 0; oi < 4; oi++) {
-            const k = KEYS[oi];
-            const p = pctFor(t, k, sum);
+          }
+          html += `<div class="mini-block"><p class="mini-q">${esc(q.text)}</p>`;
+          for (let oi = 0; oi < nOpt; oi++) {
+            const letter = OPK_poll.letterForIndex(oi);
+            const p = pctOption(row, oi, sum);
             const w = maxP > 0 ? (p / maxP) * 100 : 0;
-            const lab = SHORT[qi][oi];
+            const short = OPK_poll.truncateLabel(q.options[oi], 42);
+            const cnt = OPK_poll.getCount(row, oi);
             html += `<div class="mini-row">
-              <div class="mini-label"><strong>${esc(lab[0])}</strong> ${esc(lab[1])}</div>
+              <div class="mini-label"><strong>${esc(letter)}</strong> ${esc(short)}</div>
               <div class="mini-track" aria-hidden="true"><div class="mini-fill" style="width:${w}%"></div></div>
-              <div><div class="mini-pct">${esc(String(p))}%</div><div class="mini-n">${esc(String(t[k] || 0))}</div></div>
+              <div><div class="mini-pct">${esc(String(p))}%</div><div class="mini-n">${esc(String(cnt))}</div></div>
             </div>`;
           }
           html += "</div>";
-        }
+        });
         liveBlocks.innerHTML = html;
       }
 
@@ -727,11 +651,12 @@
           return;
         }
         if (!surveyStarted) {
+          const nq = (pollData.questions || []).length;
           surveyRoot.innerHTML =
             `<div class="welcome">
               <p class="kicker">Опрос · HR и ОПК</p>
               <h1 class="welcome-title">Пульс HR-лидеров<br>оборонной промышленности</h1>
-              <p class="welcome-desc">Анонимный опрос для участников мероприятия Академии ПСБ. Займёт не более 2 минут — 4 вопроса с выбором одного варианта ответа.</p>
+              <p class="welcome-desc">Анонимный опрос для участников мероприятия Академии ПСБ. Сейчас в анкете <strong>${esc(String(nq))}</strong> вопросов — у каждого нужно выбрать один вариант ответа.</p>
               <p class="welcome-desc">Ваши ответы помогут сформировать повестку сообщества и увидеть общую картину по отрасли.</p>
               <div class="welcome-actions">
                 <button type="button" class="btn-primary" id="btn-start">Начать опрос</button>
@@ -739,33 +664,42 @@
             </div>`;
           document.getElementById("btn-start").addEventListener("click", () => {
             surveyStarted = true;
+            const qs = pollData.questions || [];
+            answers.length = 0;
+            for (let i = 0; i < qs.length; i++) answers.push(undefined);
+            step = 0;
             renderSurvey();
           });
           return;
         }
 
-        const q = QUESTIONS[step];
+        const qs = pollData.questions || [];
+        if (qs.length === 0) {
+          surveyRoot.innerHTML = `<p class="err" style="margin:0">Вопросы не загружены. Обратитесь к организатору.</p>`;
+          return;
+        }
+        const q = qs[step];
         const sel = answers[step];
-        const pct = ((step + 1) / QUESTIONS.length) * 100;
+        const pct = ((step + 1) / qs.length) * 100;
         let opts = "";
         for (let j = 0; j < q.options.length; j++) {
-          const o = q.options[j];
-          const pressed = sel === o.key ? "true" : "false";
-          opts += `<li><button type="button" class="option" data-key="${o.key}" aria-pressed="${pressed}">
-            <span class="option-letter">${esc(o.letter)}</span>
-            <span class="option-text">${esc(o.text)}</span>
+          const letter = OPK_poll.letterForIndex(j);
+          const pressed = sel === j ? "true" : "false";
+          opts += `<li><button type="button" class="option" data-idx="${j}" aria-pressed="${pressed}">
+            <span class="option-letter">${esc(letter)}</span>
+            <span class="option-text">${esc(q.options[j])}</span>
           </button></li>`;
         }
         const backBtn =
           step > 0
             ? `<button type="button" class="btn-ghost" id="btn-back">Назад</button>`
             : `<span style="width:0;flex:0"></span>`;
-        const nextLabel = step === QUESTIONS.length - 1 ? "Отправить" : "Далее";
+        const nextLabel = step === qs.length - 1 ? "Отправить" : "Далее";
         surveyRoot.innerHTML =
           `<p class="kicker">Опрос · HR и ОПК</p>
-          <div class="progress-wrap" role="progressbar" aria-valuenow="${step + 1}" aria-valuemin="1" aria-valuemax="${QUESTIONS.length}">
+          <div class="progress-wrap" role="progressbar" aria-valuenow="${step + 1}" aria-valuemin="1" aria-valuemax="${qs.length}">
             <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
-            <span class="progress-label">Вопрос ${step + 1} из ${QUESTIONS.length}</span>
+            <span class="progress-label">Вопрос ${step + 1} из ${qs.length}</span>
           </div>
           <div class="panel">
             <h2 class="question-title">${esc(q.text)}</h2>
@@ -776,10 +710,11 @@
 
         surveyRoot.querySelectorAll(".option").forEach((btn) => {
           btn.addEventListener("click", () => {
-            const k = btn.getAttribute("data-key");
-            answers[step] = k;
+            const idx = parseInt(btn.getAttribute("data-idx"), 10);
+            answers[step] = idx;
             surveyRoot.querySelectorAll(".option").forEach((b) => {
-              b.setAttribute("aria-pressed", b.getAttribute("data-key") === k ? "true" : "false");
+              const j = parseInt(b.getAttribute("data-idx"), 10);
+              b.setAttribute("aria-pressed", j === idx ? "true" : "false");
             });
             document.getElementById("btn-next").disabled = false;
           });
@@ -792,8 +727,8 @@
           });
         }
         next.addEventListener("click", () => {
-          if (!answers[step]) return;
-          if (step < QUESTIONS.length - 1) {
+          if (answers[step] === undefined || answers[step] === null) return;
+          if (step < qs.length - 1) {
             step++;
             renderSurvey();
             return;
@@ -813,9 +748,11 @@
           btn.textContent = "Отправка…";
         }
         try {
-          const ans = [answers[0], answers[1], answers[2], answers[3]];
-          if (ans.some((x) => !KEYS.includes(x))) {
-            throw new Error("bad answers");
+          const qs = pollData.questions || [];
+          if (qs.length === 0) throw new Error("bad answers");
+          for (let i = 0; i < qs.length; i++) {
+            const oi = answers[i];
+            if (typeof oi !== "number" || oi < 0 || oi >= qs[i].options.length) throw new Error("bad answers");
           }
           const uid = auth.currentUser.uid;
           const submissionRef = doc(db, POLL_DOC[0], POLL_DOC[1], "submissions", uid);
@@ -828,8 +765,8 @@
             const vSnap = await transaction.get(visitorRef);
             await transaction.get(pollRef);
             const updates = {};
-            for (let i = 0; i < 4; i++) {
-              updates[`totals.q${i}.${ans[i]}`] = increment(1);
+            for (let i = 0; i < qs.length; i++) {
+              updates[`totals.q${i}.${answers[i]}`] = increment(1);
             }
             updates.submissionCount = increment(1);
             if (!vSnap.exists()) {
@@ -865,9 +802,11 @@
 
       function syncFromPoll(data) {
         const raw = data && typeof data === "object" ? data : {};
-        pollData = { ...defaultPoll(), ...raw };
-        if (!pollData.totals) pollData.totals = defaultPoll().totals;
-        pollData.sessionClosed = raw.sessionClosed === true;
+        pollData = window.OPK_poll.normalizePoll(raw);
+        const n = pollData.questions.length;
+        while (answers.length < n) answers.push(undefined);
+        answers.length = n;
+        if (step >= n) step = Math.max(0, n - 1);
         renderLive(pollData);
         renderSurvey();
         applyLayout();

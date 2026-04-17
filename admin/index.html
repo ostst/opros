@@ -247,6 +247,85 @@
         color: #c41e1e;
         font-size: 0.9rem;
       }
+      .adm-h2 {
+        margin: 0 0 8px;
+        font-size: 1.1rem;
+        color: var(--navy);
+      }
+      .adm-note {
+        margin: 0 0 16px;
+        font-size: 0.88rem;
+        color: var(--muted);
+      }
+      .adm-q-block {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        background: #fafbfe;
+      }
+      .adm-q-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .adm-q-num {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--navy);
+      }
+      .adm-lab {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .adm-ta {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font: inherit;
+        margin-bottom: 14px;
+        resize: vertical;
+      }
+      .adm-opt-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .adm-opt-badge {
+        flex: 0 0 1.5rem;
+        font-weight: 700;
+        color: var(--navy);
+        font-size: 0.85rem;
+      }
+      .adm-inp-opt {
+        flex: 1;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font: inherit;
+      }
+      .adm-btn-txt {
+        background: none;
+        border: none;
+        color: #b42318;
+        cursor: pointer;
+        font-size: 0.8rem;
+        padding: 4px 8px;
+      }
+      .adm-btn-txt:hover {
+        text-decoration: underline;
+      }
+      .adm-q-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
     </style>
   </head>
   <body>
@@ -287,11 +366,26 @@
           Итоги на экранах участников открываются <strong>только</strong> кнопкой «Показать результат участникам». Число сверху — завершившие опрос; строка ниже — уникальные заходы по QR.
         </p>
 
+        <div class="block" id="adm-q-wrap">
+          <h2 class="adm-h2">Вопросы опроса</h2>
+          <p class="adm-note">
+            У каждого вопроса — текст и любое число вариантов (не меньше двух). После изменений нажмите «Сохранить вопросы». Счётчики по ответам переносятся по номерам вопроса и варианта; новые строки начинаются с нуля.
+          </p>
+          <div id="adm-q-root"></div>
+          <div class="adm-q-actions">
+            <button type="button" class="secondary" id="adm-q-add">+ Добавить вопрос</button>
+            <button type="button" id="adm-q-save">Сохранить вопросы</button>
+          </div>
+          <p id="adm-q-msg" class="err" hidden style="margin-top: 12px"></p>
+        </div>
+
+        <h2 class="adm-h2" style="margin: 24px 0 12px">Текущая статистика</h2>
         <div id="adm-stats"></div>
       </div>
     </div>
 
     <script src="../assets/firebase-config.js"></script>
+    <script src="../assets/poll-helpers.js"></script>
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
       import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
@@ -312,65 +406,8 @@
       const ADMIN_PIN = FB?.adminPin ?? "1234";
       const POLL_DOC = FB?.pollDoc ?? ["poll", "main"];
 
-      const KEYS = ["a", "b", "c", "d"];
-
-      const QUESTIONS = [
-        {
-          text:
-            "С каким ключевым вызовом в управлении персоналом на предприятиях ОПК вы сталкиваетесь сегодня?",
-        },
-        {
-          text:
-            "Чего, на ваш взгляд, больше всего не хватает HR-лидерам ОПК для эффективной трансформации отрасли?",
-        },
-        {
-          text: "Какой формат взаимодействия в рамках профессионального сообщества был бы для вас наиболее ценным?",
-        },
-        {
-          text:
-            "Какую компетенцию или ресурс вы лично были бы готовы привнести в закрытое сообщество лидеров ОПК?",
-        },
-      ];
-
-      const SHORT = [
-        [
-          ["А", "Кадровый голод…"],
-          ["Б", "Устаревшие HR-процессы…"],
-          ["В", "Выгорание…"],
-          ["Г", "Конкуренция с ИТ…"],
-        ],
-        [
-          ["А", "Площадка для кейсов…"],
-          ["Б", "Позиция GR…"],
-          ["В", "Образование для ОПК…"],
-          ["Г", "Безопасная среда…"],
-        ],
-        [
-          ["А", "Офлайн-встречи…"],
-          ["Б", "Банк знаний…"],
-          ["В", "Предложения регуляторам…"],
-          ["Г", "Менторство…"],
-        ],
-        [
-          ["А", "Опыт HR-проектов…"],
-          ["Б", "GR-повестка…"],
-          ["В", "Эксперт / ментор…"],
-          ["Г", "Только слушать…"],
-        ],
-      ];
-
       function defaultPoll() {
-        return {
-          totals: {
-            q0: { a: 0, b: 0, c: 0, d: 0 },
-            q1: { a: 0, b: 0, c: 0, d: 0 },
-            q2: { a: 0, b: 0, c: 0, d: 0 },
-            q3: { a: 0, b: 0, c: 0, d: 0 },
-          },
-          submissionCount: 0,
-          visitorCount: 0,
-          sessionClosed: false,
-        };
+        return window.OPK_poll.normalizePoll({});
       }
 
       function esc(s) {
@@ -379,16 +416,19 @@
         return d.innerHTML;
       }
 
-      function pctFor(totals, k, sum) {
-        const v = totals[k] || 0;
+      function pctOption(row, oi, sum) {
+        const v = OPK_poll.getCount(row, oi);
         if (sum <= 0) return 0;
         return Math.round((v / sum) * 1000) / 10;
       }
 
       function renderStats(data) {
-        const totals = data.totals || defaultPoll().totals;
-        const sub = data.submissionCount ?? 0;
-        const vis = data.visitorCount ?? 0;
+        const raw = data || {};
+        const norm = window.OPK_poll.normalizePoll(raw);
+        const totals = norm.totals || {};
+        const questions = norm.questions || [];
+        const sub = raw.submissionCount ?? 0;
+        const vis = raw.visitorCount ?? 0;
         const doneEl = document.getElementById("adm-done");
         const visitLine = document.getElementById("adm-visit-line");
         if (doneEl) doneEl.textContent = String(sub);
@@ -396,7 +436,7 @@
 
         const st = document.getElementById("adm-status");
         if (st) {
-          const closed = data.sessionClosed === true;
+          const closed = raw.sessionClosed === true;
           st.innerHTML = closed
             ? `<span class="status closed">У участников на экране показываются итоги опроса</span>
               <div style="margin-top:10px;font-size:0.9rem;color:var(--muted)">Чтобы снова показать вопросы, нажмите «Снова открыть опрос».</div>`
@@ -405,29 +445,152 @@
         }
 
         let html = "";
-        for (let qi = 0; qi < 4; qi++) {
-          const t = totals["q" + qi] || { a: 0, b: 0, c: 0, d: 0 };
-          const sum = KEYS.reduce((s, key) => s + (t[key] || 0), 0);
+        questions.forEach((q, qi) => {
+          const row = totals["q" + qi] || {};
+          const nOpt = (q.options || []).length;
+          const sum = OPK_poll.sumRow(row);
           let maxP = 1;
-          KEYS.forEach((k) => {
-            const p = pctFor(t, k, sum);
+          for (let oi = 0; oi < nOpt; oi++) {
+            const p = pctOption(row, oi, sum);
             if (p > maxP) maxP = p;
-          });
-          html += `<div class="block"><p class="mini-q">${esc(QUESTIONS[qi].text)}</p>`;
-          for (let oi = 0; oi < 4; oi++) {
-            const k = KEYS[oi];
-            const p = pctFor(t, k, sum);
+          }
+          html += `<div class="block"><p class="mini-q">${esc(q.text)}</p>`;
+          for (let oi = 0; oi < nOpt; oi++) {
+            const letter = OPK_poll.letterForIndex(oi);
+            const p = pctOption(row, oi, sum);
             const w = maxP > 0 ? (p / maxP) * 100 : 0;
-            const lab = SHORT[qi][oi];
+            const short = OPK_poll.truncateLabel(q.options[oi], 48);
+            const cnt = OPK_poll.getCount(row, oi);
             html += `<div class="mini-row">
-              <div><strong>${esc(lab[0])}</strong> ${esc(lab[1])}</div>
+              <div><strong>${esc(letter)}</strong> ${esc(short)}</div>
               <div class="mini-track"><div class="mini-fill" style="width:${w}%"></div></div>
-              <div><div class="mini-pct">${esc(String(p))}%</div><div class="mini-n">${esc(String(t[k] || 0))}</div></div>
+              <div><div class="mini-pct">${esc(String(p))}%</div><div class="mini-n">${esc(String(cnt))}</div></div>
             </div>`;
           }
           html += "</div>";
-        }
+        });
         document.getElementById("adm-stats").innerHTML = html;
+      }
+
+      let editorDraft = [];
+      let lastQuestionsJson = "";
+
+      function renderQuestionEditor() {
+        const root = document.getElementById("adm-q-root");
+        if (!root) return;
+        if (editorDraft.length === 0) {
+          editorDraft = OPK_poll.deepCloneQuestions();
+          if (editorDraft.length === 0) {
+            editorDraft = [{ text: "Вопрос", options: ["Вариант 1", "Вариант 2"] }];
+          }
+        }
+        let html = "";
+        editorDraft.forEach((q, qi) => {
+          const opts = q.options || [];
+          html += `<div class="adm-q-block" data-qi="${qi}">
+            <div class="adm-q-head">
+              <span class="adm-q-num">Вопрос ${qi + 1}</span>
+              ${
+                editorDraft.length > 1
+                  ? `<button type="button" class="adm-btn-txt adm-del-q" data-qi="${qi}">Удалить вопрос</button>`
+                  : ""
+              }
+            </div>
+            <label class="adm-lab">Текст вопроса</label>
+            <textarea class="adm-ta adm-inp-q" data-qi="${qi}" rows="3">${esc(q.text || "")}</textarea>
+            <label class="adm-lab">Варианты ответов</label>
+            <div class="adm-opts">`;
+          opts.forEach((opt, oi) => {
+            html += `<div class="adm-opt-row">
+              <span class="adm-opt-badge">${esc(OPK_poll.letterForIndex(oi))}</span>
+              <input type="text" class="adm-inp-opt" data-qi="${qi}" data-oi="${oi}" value="${esc(opt || "")}" />
+              ${
+                opts.length > 2
+                  ? `<button type="button" class="adm-btn-txt adm-del-opt" data-qi="${qi}" data-oi="${oi}">✕</button>`
+                  : ""
+              }
+            </div>`;
+          });
+          html += `</div>
+            <button type="button" class="secondary adm-add-opt" data-qi="${qi}">+ Вариант ответа</button>
+          </div>`;
+        });
+        root.innerHTML = html;
+      }
+
+      function bindQuestionEditorEvents() {
+        const wrap = document.getElementById("adm-q-wrap");
+        if (!wrap || wrap.dataset.bound === "1") return;
+        wrap.dataset.bound = "1";
+        wrap.addEventListener("input", (e) => {
+          const t = e.target;
+          if (t.classList.contains("adm-inp-q")) {
+            editorDraft[+t.dataset.qi].text = t.value;
+          }
+          if (t.classList.contains("adm-inp-opt")) {
+            editorDraft[+t.dataset.qi].options[+t.dataset.oi] = t.value;
+          }
+        });
+        wrap.addEventListener("click", (e) => {
+          const btn = e.target.closest("button");
+          if (!btn) return;
+          if (btn.classList.contains("adm-add-opt")) {
+            const qi = +btn.dataset.qi;
+            if (!editorDraft[qi].options) editorDraft[qi].options = [];
+            editorDraft[qi].options.push("Новый вариант");
+            renderQuestionEditor();
+          }
+          if (btn.classList.contains("adm-del-opt")) {
+            const qi = +btn.dataset.qi;
+            const oi = +btn.dataset.oi;
+            if (editorDraft[qi].options.length > 2) {
+              editorDraft[qi].options.splice(oi, 1);
+              renderQuestionEditor();
+            }
+          }
+          if (btn.classList.contains("adm-del-q")) {
+            const qi = +btn.dataset.qi;
+            if (editorDraft.length > 1) {
+              editorDraft.splice(qi, 1);
+              renderQuestionEditor();
+            }
+          }
+        });
+
+        document.getElementById("adm-q-add").addEventListener("click", () => {
+          editorDraft.push({
+            text: "Новый вопрос",
+            options: ["Вариант А", "Вариант Б"],
+          });
+          renderQuestionEditor();
+        });
+
+        document.getElementById("adm-q-save").addEventListener("click", async () => {
+          const msg = document.getElementById("adm-q-msg");
+          msg.hidden = true;
+          if (!pollRef) return;
+          try {
+            const validated = OPK_poll.validateQuestionsList(editorDraft);
+            const snap = await getDoc(pollRef);
+            const cur = snap.exists() ? snap.data() : {};
+            const norm = OPK_poll.normalizePoll(cur);
+            const newTotals = OPK_poll.mergeTotalsOnQuestionSave(norm.totals, norm.questions, validated);
+            await updateDoc(pollRef, {
+              questions: validated,
+              totals: newTotals,
+              schemaVersion: 2,
+            });
+            lastQuestionsJson = JSON.stringify(validated);
+            msg.textContent = "Сохранено.";
+            msg.style.color = "#1b5e20";
+            msg.hidden = false;
+          } catch (e) {
+            console.error(e);
+            msg.textContent = e?.message || String(e);
+            msg.style.color = "#c41e1e";
+            msg.hidden = false;
+          }
+        });
       }
 
       const SESSION_KEY = "opk_admin";
@@ -491,11 +654,26 @@
         db = getFirestore(app);
         pollRef = doc(db, POLL_DOC[0], POLL_DOC[1]);
 
-        const snap = await getDoc(pollRef);
+        let snap = await getDoc(pollRef);
         if (!snap.exists()) await setDoc(pollRef, defaultPoll());
+        snap = await getDoc(pollRef);
+        const d0 = snap.exists() ? snap.data() : defaultPoll();
+        const n0 = OPK_poll.normalizePoll(d0);
+        lastQuestionsJson = JSON.stringify(n0.questions);
+        editorDraft = JSON.parse(JSON.stringify(n0.questions));
+        bindQuestionEditorEvents();
+        renderQuestionEditor();
 
         onSnapshot(pollRef, (s) => {
-          renderStats(s.exists() ? s.data() : defaultPoll());
+          const d = s.exists() ? s.data() : defaultPoll();
+          renderStats(d);
+          const norm = OPK_poll.normalizePoll(d);
+          const qj = JSON.stringify(norm.questions);
+          if (qj !== lastQuestionsJson) {
+            lastQuestionsJson = qj;
+            editorDraft = JSON.parse(JSON.stringify(norm.questions));
+            renderQuestionEditor();
+          }
         });
       }
 
