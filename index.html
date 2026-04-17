@@ -116,6 +116,10 @@
       .layout--stats-only .survey-col {
         display: none;
       }
+      /* Дубль: при открытых итогах колонка с «Начать опрос» не должна мелькать (десктоп / кэш). */
+      body.session-closed #survey-root {
+        display: none !important;
+      }
       .layout--stats-only .live-col {
         max-width: 900px;
         margin: 0 auto;
@@ -694,6 +698,10 @@
         layout.classList.toggle("layout--survey-only", !closed);
         document.body.classList.toggle("session-closed", closed);
         if (sessionBanner) sessionBanner.hidden = !closed;
+        /* Явно скрываем колонку опроса при итогах — иначе на десктопе иногда остаётся «Начать опрос» рядом с графиками. */
+        if (surveyRoot) {
+          surveyRoot.style.display = closed ? "none" : "";
+        }
       }
 
       function renderSurvey() {
