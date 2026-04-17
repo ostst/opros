@@ -3,8 +3,9 @@
  * При смене проекта Firebase правьте только этот файл.
  *
  * --- Firestore Rules ---
- * Консоль: Firestore → Rules → вставьте содержимое файла firestore.rules в корне проекта
- * (нужны блоки match для подколлекций visitors и submissions — иначе будет permission-denied).
+ * Скопируйте в консоль содержимое файла firestore.rules (в корне проекта) и опубликуйте.
+ * Для кнопки «Сбросить всё» в админке в правилах должны быть read+delete на visitors/submissions
+ * (см. комментарии в firestore.rules).
  */
 window.OPK_FIREBASE = {
   config: {

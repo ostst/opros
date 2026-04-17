@@ -5,12 +5,15 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if request.auth != null;
 
+      // create: own uid only; read+delete: any signed-in user (admin reset lists and deletes all)
       match /visitors/{visitorId} {
-        allow read, create: if request.auth != null && request.auth.uid == visitorId;
+        allow create: if request.auth != null && request.auth.uid == visitorId;
+        allow read, delete: if request.auth != null;
       }
 
       match /submissions/{submissionId} {
-        allow read, create: if request.auth != null && request.auth.uid == submissionId;
+        allow create: if request.auth != null && request.auth.uid == submissionId;
+        allow read, delete: if request.auth != null;
       }
     }
   }
