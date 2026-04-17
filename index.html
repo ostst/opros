@@ -682,27 +682,21 @@
         liveBlocks.innerHTML = html;
       }
 
-      /** Итоги у участников только после «Показать результат» в админке (sessionClosed) И после того, как сам участник завершил опрос. */
+      /** Итоги у участников только после «Показать результат» в админке (sessionClosed). Колонка с опросом/спасибо остаётся всегда. */
       function applyLayout() {
         const closed = pollData.sessionClosed === true;
-        const showResults = closed && userDone;
         const liveEl = document.getElementById("live-col");
         if (liveEl) {
-          liveEl.classList.toggle("live-col--hidden", !showResults);
-          liveEl.classList.toggle("big-stats", showResults);
+          liveEl.classList.toggle("live-col--hidden", !closed);
+          liveEl.classList.toggle("big-stats", closed);
         }
-        layout.classList.toggle("layout--survey-only", !showResults);
-        layout.classList.toggle("layout--stats-only", showResults);
+        layout.classList.toggle("layout--survey-only", !closed);
+        layout.classList.remove("layout--stats-only");
         document.body.classList.toggle("session-closed", closed);
-        if (sessionBanner) sessionBanner.hidden = !showResults;
+        if (sessionBanner) sessionBanner.hidden = !closed;
       }
 
       function renderSurvey() {
-        const closed = pollData.sessionClosed === true;
-        if (closed && userDone) {
-          surveyRoot.innerHTML = "";
-          return;
-        }
         if (userDone) {
           surveyRoot.innerHTML =
             `<div class="thanks">
@@ -711,7 +705,7 @@
                 <path d="M16 28.5l8.5 8.5L40 19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
               <h1>Спасибо, что прошли опрос</h1>
-              <p class="thanks-sub">Ваши ответы сохранены. Общие итоги и статистику можно будет посмотреть в конце мероприятия — после завершения сессии ведущий откроет результаты на экране.</p>
+              <p class="thanks-sub">Результаты появятся после завершения сессии.</p>
             </div>`;
           return;
         }

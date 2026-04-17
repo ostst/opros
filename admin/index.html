@@ -460,10 +460,9 @@
       });
 
       let pollRef = null;
+      let db = null;
 
-      /** Удаляет все документы в подколлекции poll/.../{subName} (visitors, submissions). */
-      async function deleteSubcollectionDocs(pollRef, subName) {
-        const db = pollRef.firestore;
+      async function deleteSubcollectionDocs(subName) {
         const col = collection(db, POLL_DOC[0], POLL_DOC[1], subName);
         const snap = await getDocs(col);
         if (snap.empty) return;
@@ -489,7 +488,7 @@
         }
         const app = initializeApp(FIREBASE_CONFIG);
         await signInAnonymously(getAuth(app));
-        const db = getFirestore(app);
+        db = getFirestore(app);
         pollRef = doc(db, POLL_DOC[0], POLL_DOC[1]);
 
         const snap = await getDoc(pollRef);
@@ -513,11 +512,22 @@
       });
 
       document.getElementById("adm-reset").addEventListener("click", async () => {
-        if (!pollRef) return;
+        if (!pollRef || !db) return;
         if (!confirm("Обнулить все ответы?")) return;
-        await deleteSubcollectionDocs(pollRef, "visitors");
-        await deleteSubcollectionDocs(pollRef, "submissions");
-        await setDoc(pollRef, defaultPoll());
+        const btn = document.getElementById("adm-reset");
+        btn.disabled = true;
+        btn.textContent = "Сброс…";
+        try {
+          await deleteSubcollectionDocs("visitors");
+          await deleteSubcollectionDocs("submissions");
+          await setDoc(pollRef, defaultPoll());
+        } catch (e) {
+          console.error(e);
+          alert("Ошибка сброса: " + (e?.message || e));
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Сбросить всё";
+        }
       });
 
       if (tryGate()) startFirebase();
