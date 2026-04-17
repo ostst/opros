@@ -67,20 +67,48 @@
         margin-bottom: 16px;
       }
       .counter-badge {
-        font-variant-numeric: tabular-nums;
-        font-weight: 700;
-        font-size: 1.125rem;
-        padding: 10px 16px;
+        padding: 10px 14px;
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 12px;
         box-shadow: 0 2px 10px rgba(28, 31, 38, 0.06);
         color: var(--navy);
       }
-      .counter-badge .sep {
-        opacity: 0.45;
+      .counter-wrap {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 6px 10px;
+        flex-wrap: wrap;
+      }
+      .counter-pair {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: 5.5rem;
+      }
+      .counter-num {
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        font-size: 1.2rem;
+        line-height: 1;
+      }
+      .counter-label {
+        font-size: 0.65rem;
         font-weight: 600;
-        margin: 0 2px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        text-align: center;
+        line-height: 1.2;
+        max-width: 8rem;
+      }
+      .counter-badge .sep {
+        opacity: 0.4;
+        font-weight: 600;
+        font-size: 1.1rem;
+        padding-bottom: 1.4rem;
       }
       .brand {
         margin-bottom: 0;
@@ -407,16 +435,19 @@
       }
       .thanks-counter {
         margin: 20px auto 0;
-        font-size: clamp(2rem, 8vw, 2.75rem);
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
         color: var(--navy);
-        letter-spacing: -0.02em;
+      }
+      .thanks-counter .counter-num {
+        font-size: clamp(1.75rem, 7vw, 2.5rem);
+      }
+      .thanks-counter .counter-label {
+        font-size: 0.7rem;
+        max-width: 9rem;
       }
       .thanks-counter .sep {
-        opacity: 0.45;
-        font-weight: 600;
-        margin: 0 0.15em;
+        opacity: 0.4;
+        padding-bottom: 1.25rem;
+        font-size: 1.25rem;
       }
       .thanks-sub {
         margin-top: 12px !important;
@@ -447,10 +478,20 @@
         <div
           class="counter-badge"
           id="counter-badge"
-          title="Завершили / план (план задаётся на странице /admin/)"
+          title="Слева: завершили опрос. Справа: открыли страницу по ссылке (считается само)"
           aria-live="polite"
         >
-          0<span class="sep">/</span>—
+          <div class="counter-wrap">
+            <div class="counter-pair">
+              <span class="counter-num" id="c-done">0</span>
+              <span class="counter-label">прошли опрос</span>
+            </div>
+            <span class="sep">/</span>
+            <div class="counter-pair">
+              <span class="counter-num" id="c-visit">0</span>
+              <span class="counter-label">зашли по ссылке</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -564,6 +605,7 @@
             q3: { a: 0, b: 0, c: 0, d: 0 },
           },
           submissionCount: 0,
+          visitorCount: 0,
           targetParticipants: null,
           sessionClosed: false,
         };
@@ -605,10 +647,11 @@
         const totals = data.totals || defaultPoll().totals;
         const sub = data.submissionCount ?? 0;
         const target = data.targetParticipants;
+        const vis = data.visitorCount ?? 0;
         liveMeta.innerHTML =
-          `Собрано анкет: <strong>${esc(String(sub))}</strong>` +
+          `<strong>${esc(String(sub))}</strong> прошли опрос · <strong>${esc(String(vis))}</strong> зашли по ссылке` +
           (target && target > 0
-            ? ` · план: <strong>${esc(String(target))}</strong>`
+            ? ` · план для автофинала: <strong>${esc(String(target))}</strong>`
             : "");
 
         let html = "";
@@ -638,16 +681,13 @@
       }
 
       function updateCounterBadge() {
-        const el = document.getElementById("counter-badge");
-        if (!el) return;
+        const doneEl = document.getElementById("c-done");
+        const visitEl = document.getElementById("c-visit");
+        if (!doneEl || !visitEl) return;
         const sub = pollData.submissionCount ?? 0;
-        const t = pollData.targetParticipants;
-        if (t && t > 0) {
-          el.innerHTML = `${esc(String(sub))}<span class="sep">/</span>${esc(String(t))}`;
-        } else {
-          el.innerHTML = `${esc(String(sub))}<span class="sep">/</span>—`;
-          el.title = "Задайте план на странице admin/ (ссылка в конце инструкции)";
-        }
+        const vis = pollData.visitorCount ?? 0;
+        doneEl.textContent = String(sub);
+        visitEl.textContent = String(vis);
       }
 
       /** Статистика справа и на весь экран только после закрытия сессии (план набран или кнопка админа). До этого счётчики в Firebase всё равно обновляются. */
@@ -671,15 +711,15 @@
         }
         if (userDone) {
           const sub = pollData.submissionCount ?? 0;
+          const vis = pollData.visitorCount ?? 0;
           const t = pollData.targetParticipants;
           const hasPlan = t && t > 0;
-          const counterLine = hasPlan ? `${esc(String(sub))}<span class="sep">/</span>${esc(String(t))}` : `${esc(String(sub))}<span class="sep">/</span>—`;
           const waitMsg =
             hasPlan && sub < t
               ? "Когда число завершивших совпадёт с планом, для всех откроется общая статистика."
               : hasPlan
                 ? "Открываем статистику…"
-                : "Задайте план на странице /admin/, чтобы включить общий финал.";
+                : "Спасибо, ваши ответы сохранены.";
           surveyRoot.innerHTML =
             `<div class="thanks">
               <svg width="52" height="52" viewBox="0 0 56 56" fill="none" aria-hidden="true">
@@ -687,7 +727,17 @@
                 <path d="M16 28.5l8.5 8.5L40 19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
               <h1>Спасибо, что прошли опрос</h1>
-              <div class="thanks-counter">${counterLine}</div>
+              <div class="thanks-counter counter-wrap">
+                <div class="counter-pair">
+                  <span class="counter-num">${esc(String(sub))}</span>
+                  <span class="counter-label">прошли опрос</span>
+                </div>
+                <span class="sep">/</span>
+                <div class="counter-pair">
+                  <span class="counter-num">${esc(String(vis))}</span>
+                  <span class="counter-label">зашли по ссылке</span>
+                </div>
+              </div>
               <p class="thanks-sub">${esc(waitMsg)}</p>
             </div>`;
           return;
@@ -819,6 +869,24 @@
         liveBlocks.innerHTML = "";
       }
 
+      /** Один раз на браузер: учёт перехода по ссылке (localStorage). */
+      async function countVisitorOnce() {
+        if (!pollRef || !db) return;
+        if (localStorage.getItem("opk_visitor_counted_v1")) return;
+        try {
+          await runTransaction(db, async (transaction) => {
+            const s = await transaction.get(pollRef);
+            if (!s.exists()) {
+              transaction.set(pollRef, defaultPoll());
+            }
+            transaction.update(pollRef, { visitorCount: increment(1) });
+          });
+          localStorage.setItem("opk_visitor_counted_v1", "1");
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
       async function init() {
         if (!isConfigReady()) {
           showSetupMessage();
@@ -838,6 +906,8 @@
         if (!snap.exists()) {
           await setDoc(pollRef, defaultPoll());
         }
+
+        await countVisitorOnce();
 
         unsub = onSnapshot(
           pollRef,

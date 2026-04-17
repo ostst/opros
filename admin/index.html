@@ -59,17 +59,44 @@
         text-decoration: underline;
       }
       .counter {
-        font-size: 1.25rem;
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
-        padding: 10px 18px;
+        padding: 10px 14px;
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 12px;
       }
+      .counter-wrap {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px 12px;
+        flex-wrap: wrap;
+      }
+      .counter-pair {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: 5.5rem;
+      }
+      .counter-num {
+        font-size: 1.2rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: var(--navy);
+      }
+      .counter-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-align: center;
+        line-height: 1.2;
+        max-width: 8rem;
+      }
       .counter .sep {
-        opacity: 0.45;
-        margin: 0 4px;
+        opacity: 0.4;
+        padding-bottom: 1.2rem;
+        font-weight: 600;
       }
       .status {
         display: inline-block;
@@ -245,14 +272,26 @@
           <a class="brand" href="https://psb-academy.ru/" target="_blank" rel="noopener noreferrer">
             <img src="../assets/logo.svg" width="160" height="44" alt="Академия ПСБ" />
           </a>
-          <div class="counter" id="adm-counter" aria-live="polite">0<span class="sep">/</span>—</div>
+          <div class="counter" id="adm-counter" aria-live="polite">
+          <div class="counter-wrap">
+            <div class="counter-pair">
+              <span class="counter-num" id="adm-done">0</span>
+              <span class="counter-label">прошли опрос</span>
+            </div>
+            <span class="sep">/</span>
+            <div class="counter-pair">
+              <span class="counter-num" id="adm-visit">0</span>
+              <span class="counter-label">зашли по ссылке</span>
+            </div>
+          </div>
+        </div>
           <nav class="nav"><a href="../index.html">← К опросу</a></nav>
         </div>
 
         <div id="adm-status"></div>
         <div class="controls">
           <label>
-            План (всего участников)
+            План для автофинала (необязательно)
             <input type="number" id="adm-target" min="1" placeholder="например 22" />
           </label>
           <div class="btn-row">
@@ -264,7 +303,7 @@
         </div>
 
         <p style="color: var(--muted); font-size: 0.9rem; margin-top: -12px; margin-bottom: 20px">
-          Ниже — как проходят ответы (обновляется в реальном времени). «Показать результат» откроет общую статистику всем участникам на странице опроса.
+          «Зашли по ссылке» растёт сам при каждом новом скане QR (один раз с устройства). «Прошли опрос» — после отправки анкеты. План ниже — <strong>необязателен</strong>: нужен только если хотите автоматически открыть итог после N анкет; иначе в конце нажмите «Показать результат».
         </p>
 
         <div id="adm-stats"></div>
@@ -345,6 +384,7 @@
             q3: { a: 0, b: 0, c: 0, d: 0 },
           },
           submissionCount: 0,
+          visitorCount: 0,
           targetParticipants: null,
           sessionClosed: false,
         };
@@ -365,20 +405,25 @@
       function renderStats(data) {
         const totals = data.totals || defaultPoll().totals;
         const sub = data.submissionCount ?? 0;
+        const vis = data.visitorCount ?? 0;
         const target = data.targetParticipants;
-        const el = document.getElementById("adm-counter");
-        if (el) {
-          el.innerHTML = target && target > 0
-            ? `${esc(String(sub))}<span class="sep">/</span>${esc(String(target))}`
-            : `${esc(String(sub))}<span class="sep">/</span>—`;
-        }
+        const doneEl = document.getElementById("adm-done");
+        const visitEl = document.getElementById("adm-visit");
+        if (doneEl) doneEl.textContent = String(sub);
+        if (visitEl) visitEl.textContent = String(vis);
 
         const st = document.getElementById("adm-status");
         if (st) {
           const closed = data.sessionClosed === true;
-          st.innerHTML = closed
-            ? `<span class="status closed">Итог на экране у участников: включён (показана общая статистика)</span>`
-            : `<span class="status open">Итог на экране: выключен (идёт опрос)</span>`;
+          const planLine =
+            target && target > 0
+              ? `Автофинал: после <strong>${esc(String(target))}</strong> завершённых анкет итог откроется у всех (если раньше не нажали «Показать результат»).`
+              : `Автофинал по числу не настроен — это нормально для мероприятия: в конце нажмите «Показать результат».`;
+          st.innerHTML =
+            (closed
+              ? `<span class="status closed">Итог на экране у участников: включён</span>`
+              : `<span class="status open">Итог на экране: выключен (идёт опрос)</span>`) +
+            `<div style="margin-top:10px;font-size:0.9rem;color:var(--muted)">${planLine}</div>`;
         }
 
         const targetInput = document.getElementById("adm-target");
