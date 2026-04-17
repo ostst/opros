@@ -497,8 +497,29 @@
 
       <div id="setup-warning" class="setup-warning" hidden></div>
 
+      <p
+        id="session-banner"
+        class="session-banner"
+        hidden
+        style="
+          margin: 0 0 16px;
+          padding: 12px 16px;
+          background: #e8eef9;
+          border: 1px solid #c5d4f0;
+          border-radius: 12px;
+          font-size: 0.9rem;
+          color: #1e3a5f;
+        "
+      >
+        Сейчас для всех открыты <strong>итоги</strong> опроса, а не вопросы.
+      </p>
+
       <div class="layout" id="layout">
-        <div class="survey-col" id="survey-root"></div>
+        <div class="survey-col" id="survey-root">
+          <p class="survey-loading" style="margin: 0; color: var(--muted); text-align: center; padding: 32px 16px">
+            Загрузка опроса…
+          </p>
+        </div>
         <aside class="live-col live-col--hidden" id="live-col">
           <p class="live-title">Статистика в реальном времени</p>
           <p class="live-meta" id="live-meta">Подключение…</p>
@@ -627,6 +648,7 @@
       const liveBlocks = document.getElementById("live-blocks");
       const layout = document.getElementById("layout");
       const setupWarning = document.getElementById("setup-warning");
+      const sessionBanner = document.getElementById("session-banner");
 
       let db = null;
       let pollRef = null;
@@ -701,6 +723,7 @@
         layout.classList.toggle("layout--survey-only", !closed);
         layout.classList.toggle("layout--stats-only", closed);
         document.body.classList.toggle("session-closed", closed);
+        if (sessionBanner) sessionBanner.hidden = !closed;
       }
 
       function renderSurvey() {
@@ -863,27 +886,32 @@
         setupWarning.innerHTML =
           `<strong>Firebase не настроен.</strong> В консоли Firebase: включите <strong>Firestore</strong>, в Authentication → Sign-in method — <strong>Анонимный</strong>, ` +
           `в Authentication → Settings → <strong>Authorized domains</strong> добавьте домен хостинга (например <code>username.github.io</code> или свой сайт). ` +
-          `Проверьте файл <code>assets/firebase-config.js</code>. Правила Firestore (упрощённо): ` +
-          `<code>match /poll/{id} { allow read: if true; allow create, update: if request.auth != null; }</code>`;
+          `Проверьте <code>assets/firebase-config.js</code>. В Firestore Rules нужен доступ к <code>poll/.../visitors/{uid}</code> — см. комментарий в том файле.`;
         liveMeta.textContent = "Нет подключения к базе";
         liveBlocks.innerHTML = "";
       }
 
-      /** Один раз на браузер: учёт перехода по ссылке (localStorage). */
-      async function countVisitorOnce() {
-        if (!pollRef || !db) return;
-        if (localStorage.getItem("opk_visitor_counted_v1")) return;
+      /**
+       * Один раз на устройство: по UID анонимного Firebase (не localStorage —
+       * в WebView/QR он ненадёжен). Документ poll/.../visitors/{uid}.
+       */
+      async function countVisitorOnce(auth) {
+        if (!pollRef || !db || !auth?.currentUser) return;
+        const uid = auth.currentUser.uid;
+        const visitorRef = doc(db, POLL_DOC[0], POLL_DOC[1], "visitors", uid);
         try {
           await runTransaction(db, async (transaction) => {
-            const s = await transaction.get(pollRef);
-            if (!s.exists()) {
+            const vSnap = await transaction.get(visitorRef);
+            if (vSnap.exists()) return;
+            const pSnap = await transaction.get(pollRef);
+            if (!pSnap.exists()) {
               transaction.set(pollRef, defaultPoll());
             }
+            transaction.set(visitorRef, { v: 1 });
             transaction.update(pollRef, { visitorCount: increment(1) });
           });
-          localStorage.setItem("opk_visitor_counted_v1", "1");
         } catch (e) {
-          console.error(e);
+          console.error("visitor count:", e);
         }
       }
 
@@ -902,12 +930,16 @@
         db = getFirestore(app);
         pollRef = doc(db, POLL_DOC[0], POLL_DOC[1]);
 
-        const snap = await getDoc(pollRef);
+        let snap = await getDoc(pollRef);
         if (!snap.exists()) {
           await setDoc(pollRef, defaultPoll());
+          snap = await getDoc(pollRef);
         }
 
-        await countVisitorOnce();
+        await countVisitorOnce(auth);
+
+        const latest = await getDoc(pollRef);
+        syncFromPoll(latest.exists() ? latest.data() : defaultPoll());
 
         unsub = onSnapshot(
           pollRef,

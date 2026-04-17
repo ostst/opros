@@ -1,6 +1,23 @@
 /**
  * Общие настройки для опроса и страницы /admin/
  * При смене проекта Firebase правьте только этот файл.
+ *
+ * --- Firestore Rules (консоль Firebase → Firestore → Rules) ---
+ * Учёт визитов: документ poll/{pollId}/visitors/{uid} создаётся только своим uid.
+ *
+ * rules_version = '2';
+ * service cloud.firestore {
+ *   match /databases/{database}/documents {
+ *     match /poll/{pollId} {
+ *       allow read: if true;
+ *       allow create, update: if request.auth != null;
+ *
+ *       match /visitors/{visitorId} {
+ *         allow read, create: if request.auth != null && request.auth.uid == visitorId;
+ *       }
+ *     }
+ *   }
+ * }
  */
 window.OPK_FIREBASE = {
   config: {

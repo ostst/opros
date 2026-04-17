@@ -321,6 +321,9 @@
         setDoc,
         onSnapshot,
         updateDoc,
+        collection,
+        getDocs,
+        writeBatch,
       } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
       const FB = window.OPK_FIREBASE;
@@ -488,6 +491,26 @@
 
       let pollRef = null;
 
+      /** Удаляет poll/.../visitors/* — иначе после сброса старые UID не дадут новый +1 к visitorCount. */
+      async function deleteAllVisitorDocs(pollRef) {
+        const db = pollRef.firestore;
+        const col = collection(db, POLL_DOC[0], POLL_DOC[1], "visitors");
+        const snap = await getDocs(col);
+        if (snap.empty) return;
+        let batch = writeBatch(db);
+        let n = 0;
+        for (const d of snap.docs) {
+          batch.delete(d.ref);
+          n++;
+          if (n >= 400) {
+            await batch.commit();
+            batch = writeBatch(db);
+            n = 0;
+          }
+        }
+        if (n > 0) await batch.commit();
+      }
+
       async function startFirebase() {
         if (!FIREBASE_CONFIG?.apiKey) {
           document.getElementById("adm-stats").innerHTML =
@@ -530,6 +553,7 @@
       document.getElementById("adm-reset").addEventListener("click", async () => {
         if (!pollRef) return;
         if (!confirm("Обнулить все ответы?")) return;
+        await deleteAllVisitorDocs(pollRef);
         await setDoc(pollRef, defaultPoll());
       });
 
