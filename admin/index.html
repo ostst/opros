@@ -366,6 +366,29 @@
           Итоги на экранах участников открываются <strong>только</strong> кнопкой «Показать результат участникам». Число сверху — завершившие опрос; строка ниже — уникальные заходы по QR.
         </p>
 
+        <div class="block" id="adm-welcome-wrap">
+          <h2 class="adm-h2">Приветственный экран</h2>
+          <p class="adm-note">
+            Текст до кнопки «Начать опрос» на странице опроса. В заголовке новая строка = перенос. В первом абзаце можно написать <code>{{nq}}</code> — подставится число вопросов (жирным).
+          </p>
+          <label class="adm-lab" for="adm-w-kicker">Строка над заголовком (kicker)</label>
+          <input
+            type="text"
+            id="adm-w-kicker"
+            style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; font: inherit; margin-bottom: 12px"
+          />
+          <label class="adm-lab" for="adm-w-title">Заголовок</label>
+          <textarea class="adm-ta" id="adm-w-title" rows="2"></textarea>
+          <label class="adm-lab" for="adm-w-lead">Первый абзац</label>
+          <textarea class="adm-ta" id="adm-w-lead" rows="3"></textarea>
+          <label class="adm-lab" for="adm-w-closing">Второй абзац</label>
+          <textarea class="adm-ta" id="adm-w-closing" rows="2"></textarea>
+          <div class="adm-q-actions" style="margin-top: 12px">
+            <button type="button" id="adm-w-save">Сохранить приветствие</button>
+          </div>
+          <p id="adm-w-msg" class="err" hidden style="margin-top: 12px"></p>
+        </div>
+
         <div class="block" id="adm-q-wrap">
           <h2 class="adm-h2">Вопросы опроса</h2>
           <p class="adm-note">
@@ -474,6 +497,47 @@
 
       let editorDraft = [];
       let lastQuestionsJson = "";
+      let lastWelcomeJson = "";
+
+      function fillWelcomeFields(welcome) {
+        const w = OPK_poll.normalizeWelcome(welcome || {});
+        const k = document.getElementById("adm-w-kicker");
+        const t = document.getElementById("adm-w-title");
+        const l = document.getElementById("adm-w-lead");
+        const c = document.getElementById("adm-w-closing");
+        if (k) k.value = w.kicker;
+        if (t) t.value = w.title;
+        if (l) l.value = w.lead;
+        if (c) c.value = w.closing;
+      }
+
+      function bindWelcomeSave() {
+        const wrap = document.getElementById("adm-welcome-wrap");
+        if (!wrap || wrap.dataset.bound === "1") return;
+        wrap.dataset.bound = "1";
+        document.getElementById("adm-w-save").addEventListener("click", async () => {
+          const msg = document.getElementById("adm-w-msg");
+          msg.hidden = true;
+          if (!pollRef) return;
+          try {
+            const welcome = {
+              kicker: document.getElementById("adm-w-kicker").value,
+              title: document.getElementById("adm-w-title").value,
+              lead: document.getElementById("adm-w-lead").value,
+              closing: document.getElementById("adm-w-closing").value,
+            };
+            await updateDoc(pollRef, { welcome });
+            msg.textContent = "Сохранено.";
+            msg.style.color = "#1b5e20";
+            msg.hidden = false;
+          } catch (e) {
+            console.error(e);
+            msg.textContent = e?.message || String(e);
+            msg.style.color = "#c41e1e";
+            msg.hidden = false;
+          }
+        });
+      }
 
       function renderQuestionEditor() {
         const root = document.getElementById("adm-q-root");
@@ -660,7 +724,10 @@
         const d0 = snap.exists() ? snap.data() : defaultPoll();
         const n0 = OPK_poll.normalizePoll(d0);
         lastQuestionsJson = JSON.stringify(n0.questions);
+        lastWelcomeJson = JSON.stringify(n0.welcome);
         editorDraft = JSON.parse(JSON.stringify(n0.questions));
+        fillWelcomeFields(n0.welcome);
+        bindWelcomeSave();
         bindQuestionEditorEvents();
         renderQuestionEditor();
 
@@ -673,6 +740,11 @@
             lastQuestionsJson = qj;
             editorDraft = JSON.parse(JSON.stringify(norm.questions));
             renderQuestionEditor();
+          }
+          const wj = JSON.stringify(norm.welcome);
+          if (wj !== lastWelcomeJson) {
+            lastWelcomeJson = wj;
+            fillWelcomeFields(norm.welcome);
           }
         });
       }

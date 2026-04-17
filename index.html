@@ -510,6 +510,19 @@
         return d.innerHTML;
       }
 
+      function welcomeTitleHtml(t) {
+        return String(t || "")
+          .split("\n")
+          .map((line) => esc(line))
+          .join("<br>");
+      }
+
+      /** В тексте первого абзаца можно использовать {{nq}} — подставится число вопросов (жирным). */
+      function welcomeLeadHtml(s, nq) {
+        const parts = String(s || "").split("{{nq}}");
+        return parts.map((p) => esc(p)).join(`<strong>${esc(String(nq))}</strong>`);
+      }
+
       function isConfigReady() {
         const c = window.OPK_FIREBASE?.config;
         return !!(c && c.apiKey && c.projectId);
@@ -652,12 +665,13 @@
         }
         if (!surveyStarted) {
           const nq = (pollData.questions || []).length;
+          const w = pollData.welcome;
           surveyRoot.innerHTML =
             `<div class="welcome">
-              <p class="kicker">Опрос · HR и ОПК</p>
-              <h1 class="welcome-title">Пульс HR-лидеров<br>оборонной промышленности</h1>
-              <p class="welcome-desc">Анонимный опрос для участников мероприятия Академии ПСБ. Сейчас в анкете <strong>${esc(String(nq))}</strong> вопросов — у каждого нужно выбрать один вариант ответа.</p>
-              <p class="welcome-desc">Ваши ответы помогут сформировать повестку сообщества и увидеть общую картину по отрасли.</p>
+              <p class="kicker">${esc(w.kicker)}</p>
+              <h1 class="welcome-title">${welcomeTitleHtml(w.title)}</h1>
+              <p class="welcome-desc">${welcomeLeadHtml(w.lead, nq)}</p>
+              <p class="welcome-desc">${esc(w.closing)}</p>
               <div class="welcome-actions">
                 <button type="button" class="btn-primary" id="btn-start">Начать опрос</button>
               </div>

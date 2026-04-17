@@ -78,7 +78,38 @@
     if (typeof base.submissionCount !== "number") base.submissionCount = 0;
     if (typeof base.visitorCount !== "number") base.visitorCount = 0;
 
+    base.welcome = normalizeWelcome(raw && raw.welcome);
+
     return base;
+  }
+
+  function defaultWelcomeFromConfig() {
+    const src = w.OPK_DEFAULT_WELCOME;
+    if (!src || typeof src !== "object") {
+      return {
+        kicker: "Опрос · HR и ОПК",
+        title: "Пульс HR-лидеров\nоборонной промышленности",
+        lead:
+          "Анонимный опрос для участников мероприятия Академии ПСБ. Сейчас в анкете {{nq}} вопросов — у каждого нужно выбрать один вариант ответа.",
+        closing: "Ваши ответы помогут сформировать повестку сообщества и увидеть общую картину по отрасли.",
+      };
+    }
+    return {
+      kicker: String(src.kicker || "").trim() || "Опрос · HR и ОПК",
+      title: String(src.title || ""),
+      lead: String(src.lead || ""),
+      closing: String(src.closing || ""),
+    };
+  }
+
+  function normalizeWelcome(w) {
+    const d = defaultWelcomeFromConfig();
+    if (!w || typeof w !== "object") return d;
+    const kicker = String(w.kicker ?? d.kicker).trim() || d.kicker;
+    const title = String(w.title ?? d.title).trim() || d.title;
+    const lead = String(w.lead ?? d.lead).trim() || d.lead;
+    const closing = String(w.closing ?? d.closing).trim() || d.closing;
+    return { kicker, title, lead, closing };
   }
 
   function letterForIndex(i) {
@@ -138,6 +169,7 @@
     deepCloneQuestions,
     emptyTotalsForQuestions,
     normalizePoll,
+    normalizeWelcome,
     letterForIndex,
     truncateLabel,
     sumRow,
