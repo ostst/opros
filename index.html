@@ -404,6 +404,34 @@
       .big-stats .mini-q {
         font-size: 0.95rem;
       }
+      .welcome {
+        padding: 12px 4px 8px;
+      }
+      .welcome-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1.25;
+        margin: 0 0 18px;
+        color: var(--navy);
+      }
+      @media (min-width: 600px) {
+        .welcome-title {
+          font-size: 1.9rem;
+        }
+      }
+      .welcome-desc {
+        font-size: 0.9375rem;
+        color: var(--muted);
+        margin: 0 0 12px;
+        line-height: 1.6;
+        max-width: 38em;
+      }
+      .welcome-actions {
+        margin-top: 28px;
+      }
+      .welcome-actions .btn-primary {
+        max-width: 240px;
+      }
     </style>
   </head>
   <body>
@@ -608,6 +636,7 @@
       let step = 0;
       const answers = [];
       let userDone = false;
+      let surveyStarted = false;
       let sending = false;
       let unsub = null;
 
@@ -653,23 +682,24 @@
         liveBlocks.innerHTML = html;
       }
 
-      /** Итоги у участников только после «Показать результат» в админке (sessionClosed). */
+      /** Итоги у участников только после «Показать результат» в админке (sessionClosed) И после того, как сам участник завершил опрос. */
       function applyLayout() {
         const closed = pollData.sessionClosed === true;
+        const showResults = closed && userDone;
         const liveEl = document.getElementById("live-col");
         if (liveEl) {
-          liveEl.classList.toggle("live-col--hidden", !closed);
-          liveEl.classList.toggle("big-stats", closed);
+          liveEl.classList.toggle("live-col--hidden", !showResults);
+          liveEl.classList.toggle("big-stats", showResults);
         }
-        layout.classList.toggle("layout--survey-only", !closed);
-        layout.classList.toggle("layout--stats-only", closed);
+        layout.classList.toggle("layout--survey-only", !showResults);
+        layout.classList.toggle("layout--stats-only", showResults);
         document.body.classList.toggle("session-closed", closed);
-        if (sessionBanner) sessionBanner.hidden = !closed;
+        if (sessionBanner) sessionBanner.hidden = !showResults;
       }
 
       function renderSurvey() {
         const closed = pollData.sessionClosed === true;
-        if (closed) {
+        if (closed && userDone) {
           surveyRoot.innerHTML = "";
           return;
         }
@@ -683,6 +713,23 @@
               <h1>Спасибо, что прошли опрос</h1>
               <p class="thanks-sub">Ваши ответы сохранены. Общие итоги и статистику можно будет посмотреть в конце мероприятия — после завершения сессии ведущий откроет результаты на экране.</p>
             </div>`;
+          return;
+        }
+        if (!surveyStarted) {
+          surveyRoot.innerHTML =
+            `<div class="welcome">
+              <p class="kicker">Опрос · HR и ОПК</p>
+              <h1 class="welcome-title">Пульс HR-лидеров<br>оборонной промышленности</h1>
+              <p class="welcome-desc">Анонимный опрос для участников мероприятия Академии ПСБ. Займёт не более 2 минут — 4 вопроса с выбором одного варианта ответа.</p>
+              <p class="welcome-desc">Ваши ответы помогут сформировать повестку сообщества и увидеть общую картину по отрасли.</p>
+              <div class="welcome-actions">
+                <button type="button" class="btn-primary" id="btn-start">Начать опрос</button>
+              </div>
+            </div>`;
+          document.getElementById("btn-start").addEventListener("click", () => {
+            surveyStarted = true;
+            renderSurvey();
+          });
           return;
         }
 
