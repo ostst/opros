@@ -644,6 +644,10 @@
       let sending = false;
       let unsub = null;
 
+      function isSessionClosed() {
+        return pollData.sessionClosed === true;
+      }
+
       function pctFor(totals, k, sum) {
         const v = totals[k] || 0;
         if (sum <= 0) return 0;
@@ -651,7 +655,7 @@
       }
 
       function renderLive(data) {
-        const closed = data.sessionClosed === true;
+        const closed = data && data.sessionClosed === true;
         const totals = data.totals || defaultPoll().totals;
         if (liveTitle) liveTitle.textContent = closed ? "Итоги опроса" : "Статистика";
         if (liveMeta) {
@@ -688,7 +692,7 @@
 
       /** До показа итогов — одна колонка с опросом; после «Показать результат» — скрываем опрос/спасибо, только блок с итогами. */
       function applyLayout() {
-        const closed = pollData.sessionClosed === true;
+        const closed = isSessionClosed();
         const liveEl = document.getElementById("live-col");
         if (liveEl) {
           liveEl.classList.toggle("live-col--hidden", !closed);
@@ -705,7 +709,7 @@
       }
 
       function renderSurvey() {
-        const closed = pollData.sessionClosed === true;
+        const closed = isSessionClosed();
         if (closed) {
           surveyRoot.innerHTML = "";
           return;
@@ -860,11 +864,13 @@
       }
 
       function syncFromPoll(data) {
-        pollData = { ...defaultPoll(), ...data };
+        const raw = data && typeof data === "object" ? data : {};
+        pollData = { ...defaultPoll(), ...raw };
         if (!pollData.totals) pollData.totals = defaultPoll().totals;
+        pollData.sessionClosed = raw.sessionClosed === true;
         renderLive(pollData);
-        applyLayout();
         renderSurvey();
+        applyLayout();
       }
 
       function showSetupMessage() {
