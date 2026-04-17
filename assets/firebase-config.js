@@ -2,26 +2,9 @@
  * Общие настройки для опроса и страницы /admin/
  * При смене проекта Firebase правьте только этот файл.
  *
- * --- Firestore Rules (консоль Firebase → Firestore → Rules) ---
- * Учёт визитов: документ poll/{pollId}/visitors/{uid} создаётся только своим uid.
- *
- * rules_version = '2';
- * service cloud.firestore {
- *   match /databases/{database}/documents {
- *     match /poll/{pollId} {
- *       allow read: if true;
- *       allow create, update: if request.auth != null;
- *
- *       match /visitors/{visitorId} {
- *         allow read, create: if request.auth != null && request.auth.uid == visitorId;
- *       }
- *
- *       match /submissions/{submissionId} {
- *         allow read, create: if request.auth != null && request.auth.uid == submissionId;
- *       }
- *     }
- *   }
- * }
+ * --- Firestore Rules ---
+ * Консоль: Firestore → Rules → вставьте содержимое файла firestore.rules в корне проекта
+ * (нужны блоки match для подколлекций visitors и submissions — иначе будет permission-denied).
  */
 window.OPK_FIREBASE = {
   config: {
