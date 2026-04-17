@@ -563,6 +563,36 @@
         return !!(c && c.apiKey && c.projectId);
       }
 
+      /** Понятная подсказка по коду Firebase (анонимный вход часто уже включён — чаще виноват домен или правила). */
+      function initErrorHint(e) {
+        const code = e && (e.code || e.name);
+        const host = typeof location !== "undefined" ? location.hostname : "";
+        const msg = e && e.message ? String(e.message) : "";
+        if (code === "auth/unauthorized-domain") {
+          return (
+            `<strong>Домен не разрешён для входа.</strong> Откройте Firebase Console → <strong>Authentication</strong> → вкладка <strong>Settings</strong> → <strong>Authorized domains</strong> → <strong>Add domain</strong> и добавьте <code>${esc(host || "ваш-домен")}</code> (для GitHub Pages обычно <code>имя.github.io</code>).`
+          );
+        }
+        if (code === "auth/operation-not-allowed") {
+          return (
+            `<strong>Анонимный провайдер выключен для этого приложения.</strong> Authentication → Sign-in method → Анонимный → Включить. Убедитесь, что открыт тот же проект Firebase, что в <code>assets/firebase-config.js</code> (projectId).`
+          );
+        }
+        if (
+          String(code || "").includes("permission-denied") ||
+          msg.includes("Permission denied") ||
+          msg.includes("Missing or insufficient permissions")
+        ) {
+          return (
+            `<strong>Доступ к базе запрещён правилами Firestore.</strong> Проверьте Rules для <code>poll/...</code>, подколлекций <code>visitors</code> и <code>submissions</code> — см. комментарий в <code>assets/firebase-config.js</code>.`
+          );
+        }
+        if (code === "auth/network-request-failed" || code === "unavailable") {
+          return `<strong>Сеть или сервис временно недоступны.</strong> Попробуйте другой интернет / VPN или позже.`;
+        }
+        return `<strong>Детали:</strong> <code>${esc(String(code || "ошибка"))}</code> — ${esc(String((e && e.message) || e || ""))}`;
+      }
+
       const surveyRoot = document.getElementById("survey-root");
       const liveTitle = document.getElementById("live-title");
       const liveMeta = document.getElementById("live-meta");
@@ -864,7 +894,10 @@
           console.error(e);
           surveyRoot.innerHTML =
             `<p class="kicker">Опрос · HR и ОПК</p>
-            <p class="err" style="margin:0">Не удалось загрузить опрос. Проверьте сеть, домен в Firebase (Authorized domains) и что включён анонимный вход. ${esc(String(e && (e.message || e.code) || e))}</p>`;
+            <div class="err" style="margin:0;line-height:1.45">
+              <p style="margin:0 0 10px"><strong>Не удалось подключиться к опросу.</strong> Ниже — что сделать в первую очередь (часто помогает пункт про домен, даже если анонимный вход уже включён).</p>
+              <p style="margin:0">${initErrorHint(e)}</p>
+            </div>`;
         }
       }
 
