@@ -58,45 +58,37 @@
       .nav a:hover {
         text-decoration: underline;
       }
-      .counter {
-        padding: 10px 14px;
+      .adm-kpi {
+        padding: 14px 18px;
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 12px;
+        text-align: center;
+        min-width: 220px;
       }
-      .counter-wrap {
-        display: flex;
-        align-items: flex-end;
-        gap: 8px 12px;
-        flex-wrap: wrap;
-      }
-      .counter-pair {
+      .adm-kpi-main {
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 4px;
-        min-width: 5.5rem;
       }
-      .counter-num {
-        font-size: 1.2rem;
+      .adm-kpi-num {
+        font-size: 2rem;
         font-weight: 700;
         font-variant-numeric: tabular-nums;
         color: var(--navy);
+        line-height: 1.1;
       }
-      .counter-label {
-        font-size: 0.65rem;
+      .adm-kpi-label {
+        font-size: 0.85rem;
         font-weight: 600;
+        color: var(--text);
+        max-width: 14rem;
+      }
+      .adm-kpi-hint {
+        margin: 10px 0 0;
+        font-size: 0.8rem;
         color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        text-align: center;
-        line-height: 1.2;
-        max-width: 8rem;
-      }
-      .counter .sep {
-        opacity: 0.4;
-        padding-bottom: 1.2rem;
-        font-weight: 600;
       }
       .status {
         display: inline-block;
@@ -272,38 +264,27 @@
           <a class="brand" href="https://psb-academy.ru/" target="_blank" rel="noopener noreferrer">
             <img src="../assets/logo.svg" width="160" height="44" alt="Академия ПСБ" />
           </a>
-          <div class="counter" id="adm-counter" aria-live="polite">
-          <div class="counter-wrap">
-            <div class="counter-pair">
-              <span class="counter-num" id="adm-done">0</span>
-              <span class="counter-label">прошли опрос</span>
+          <div class="adm-kpi" id="adm-counter" aria-live="polite">
+            <div class="adm-kpi-main">
+              <span class="adm-kpi-num" id="adm-done">0</span>
+              <span class="adm-kpi-label">завершили опрос</span>
             </div>
-            <span class="sep">/</span>
-            <div class="counter-pair">
-              <span class="counter-num" id="adm-visit">0</span>
-              <span class="counter-label">зашли по ссылке</span>
-            </div>
+            <p class="adm-kpi-hint" id="adm-visit-line">Уникальных заходов по ссылке: 0</p>
           </div>
-        </div>
           <nav class="nav"><a href="../index.html">← К опросу</a></nav>
         </div>
 
         <div id="adm-status"></div>
         <div class="controls">
-          <label>
-            План для автофинала (необязательно)
-            <input type="number" id="adm-target" min="1" placeholder="например 22" />
-          </label>
           <div class="btn-row">
-            <button type="button" id="adm-save-plan">Сохранить план</button>
             <button type="button" class="secondary" id="adm-reopen">Снова открыть опрос</button>
-            <button type="button" id="adm-show-result">Показать результат</button>
+            <button type="button" id="adm-show-result">Показать результат участникам</button>
             <button type="button" class="danger" id="adm-reset">Сбросить всё</button>
           </div>
         </div>
 
         <p style="color: var(--muted); font-size: 0.9rem; margin-top: -12px; margin-bottom: 20px">
-          «Зашли по ссылке» растёт сам при каждом новом скане QR (один раз с устройства). «Прошли опрос» — после отправки анкеты. План ниже — <strong>необязателен</strong>: нужен только если хотите автоматически открыть итог после N анкет; иначе в конце нажмите «Показать результат».
+          Итоги на экранах участников открываются <strong>только</strong> кнопкой «Показать результат участникам». Число сверху — завершившие опрос; строка ниже — уникальные заходы по QR.
         </p>
 
         <div id="adm-stats"></div>
@@ -388,7 +369,6 @@
           },
           submissionCount: 0,
           visitorCount: 0,
-          targetParticipants: null,
           sessionClosed: false,
         };
       }
@@ -409,29 +389,19 @@
         const totals = data.totals || defaultPoll().totals;
         const sub = data.submissionCount ?? 0;
         const vis = data.visitorCount ?? 0;
-        const target = data.targetParticipants;
         const doneEl = document.getElementById("adm-done");
-        const visitEl = document.getElementById("adm-visit");
+        const visitLine = document.getElementById("adm-visit-line");
         if (doneEl) doneEl.textContent = String(sub);
-        if (visitEl) visitEl.textContent = String(vis);
+        if (visitLine) visitLine.textContent = `Уникальных заходов по ссылке: ${vis}`;
 
         const st = document.getElementById("adm-status");
         if (st) {
           const closed = data.sessionClosed === true;
-          const planLine =
-            target && target > 0
-              ? `Автофинал: после <strong>${esc(String(target))}</strong> завершённых анкет итог откроется у всех (если раньше не нажали «Показать результат»).`
-              : `Автофинал по числу не настроен — это нормально для мероприятия: в конце нажмите «Показать результат».`;
-          st.innerHTML =
-            (closed
-              ? `<span class="status closed">Итог на экране у участников: включён</span>`
-              : `<span class="status open">Итог на экране: выключен (идёт опрос)</span>`) +
-            `<div style="margin-top:10px;font-size:0.9rem;color:var(--muted)">${planLine}</div>`;
-        }
-
-        const targetInput = document.getElementById("adm-target");
-        if (targetInput && document.activeElement !== targetInput) {
-          targetInput.value = target && target > 0 ? String(target) : "";
+          st.innerHTML = closed
+            ? `<span class="status closed">У участников на экране показываются итоги опроса</span>
+              <div style="margin-top:10px;font-size:0.9rem;color:var(--muted)">Чтобы снова показать вопросы, нажмите «Снова открыть опрос».</div>`
+            : `<span class="status open">У участников идёт опрос; итоги не показаны</span>
+              <div style="margin-top:10px;font-size:0.9rem;color:var(--muted)">В конце мероприятия нажмите «Показать результат участникам».</div>`;
         }
 
         let html = "";
@@ -491,10 +461,10 @@
 
       let pollRef = null;
 
-      /** Удаляет poll/.../visitors/* — иначе после сброса старые UID не дадут новый +1 к visitorCount. */
-      async function deleteAllVisitorDocs(pollRef) {
+      /** Удаляет все документы в подколлекции poll/.../{subName} (visitors, submissions). */
+      async function deleteSubcollectionDocs(pollRef, subName) {
         const db = pollRef.firestore;
-        const col = collection(db, POLL_DOC[0], POLL_DOC[1], "visitors");
+        const col = collection(db, POLL_DOC[0], POLL_DOC[1], subName);
         const snap = await getDocs(col);
         if (snap.empty) return;
         let batch = writeBatch(db);
@@ -530,17 +500,9 @@
         });
       }
 
-      document.getElementById("adm-save-plan").addEventListener("click", async () => {
-        if (!pollRef) return;
-        const v = parseInt(document.getElementById("adm-target").value, 10);
-        await updateDoc(pollRef, {
-          targetParticipants: Number.isFinite(v) && v > 0 ? v : null,
-        });
-      });
-
       document.getElementById("adm-show-result").addEventListener("click", async () => {
         if (!pollRef) return;
-        if (!confirm("Показать общую статистику всем на странице опроса?")) return;
+        if (!confirm("Показать итоги опроса всем участникам на их экранах?")) return;
         await updateDoc(pollRef, { sessionClosed: true });
       });
 
@@ -553,7 +515,8 @@
       document.getElementById("adm-reset").addEventListener("click", async () => {
         if (!pollRef) return;
         if (!confirm("Обнулить все ответы?")) return;
-        await deleteAllVisitorDocs(pollRef);
+        await deleteSubcollectionDocs(pollRef, "visitors");
+        await deleteSubcollectionDocs(pollRef, "submissions");
         await setDoc(pollRef, defaultPoll());
       });
 

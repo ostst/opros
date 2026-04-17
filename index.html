@@ -61,54 +61,9 @@
       .topbar {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 16px;
         flex-wrap: wrap;
         margin-bottom: 16px;
-      }
-      .counter-badge {
-        padding: 10px 14px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(28, 31, 38, 0.06);
-        color: var(--navy);
-      }
-      .counter-wrap {
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-        gap: 6px 10px;
-        flex-wrap: wrap;
-      }
-      .counter-pair {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        min-width: 5.5rem;
-      }
-      .counter-num {
-        font-variant-numeric: tabular-nums;
-        font-weight: 700;
-        font-size: 1.2rem;
-        line-height: 1;
-      }
-      .counter-label {
-        font-size: 0.65rem;
-        font-weight: 600;
-        color: var(--muted);
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        text-align: center;
-        line-height: 1.2;
-        max-width: 8rem;
-      }
-      .counter-badge .sep {
-        opacity: 0.4;
-        font-weight: 600;
-        font-size: 1.1rem;
-        padding-bottom: 1.4rem;
       }
       .brand {
         margin-bottom: 0;
@@ -433,22 +388,6 @@
         color: var(--muted);
         font-size: 0.9375rem;
       }
-      .thanks-counter {
-        margin: 20px auto 0;
-        color: var(--navy);
-      }
-      .thanks-counter .counter-num {
-        font-size: clamp(1.75rem, 7vw, 2.5rem);
-      }
-      .thanks-counter .counter-label {
-        font-size: 0.7rem;
-        max-width: 9rem;
-      }
-      .thanks-counter .sep {
-        opacity: 0.4;
-        padding-bottom: 1.25rem;
-        font-size: 1.25rem;
-      }
       .thanks-sub {
         margin-top: 12px !important;
         max-width: 22em;
@@ -475,24 +414,6 @@
             <img class="brand-logo" src="assets/logo.svg" width="160" height="44" alt="Академия ПСБ" />
           </a>
         </header>
-        <div
-          class="counter-badge"
-          id="counter-badge"
-          title="Слева: завершили опрос. Справа: открыли страницу по ссылке (считается само)"
-          aria-live="polite"
-        >
-          <div class="counter-wrap">
-            <div class="counter-pair">
-              <span class="counter-num" id="c-done">0</span>
-              <span class="counter-label">прошли опрос</span>
-            </div>
-            <span class="sep">/</span>
-            <div class="counter-pair">
-              <span class="counter-num" id="c-visit">0</span>
-              <span class="counter-label">зашли по ссылке</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div id="setup-warning" class="setup-warning" hidden></div>
@@ -511,7 +432,7 @@
           color: #1e3a5f;
         "
       >
-        Сейчас для всех открыты <strong>итоги</strong> опроса, а не вопросы.
+        Сейчас для всех открыты <strong>итоги</strong> опроса.
       </p>
 
       <div class="layout" id="layout">
@@ -521,8 +442,8 @@
           </p>
         </div>
         <aside class="live-col live-col--hidden" id="live-col">
-          <p class="live-title">Статистика в реальном времени</p>
-          <p class="live-meta" id="live-meta">Подключение…</p>
+          <p class="live-title" id="live-title">Итоги опроса</p>
+          <p class="live-meta" id="live-meta"></p>
           <div id="live-blocks"></div>
         </aside>
       </div>
@@ -627,7 +548,6 @@
           },
           submissionCount: 0,
           visitorCount: 0,
-          targetParticipants: null,
           sessionClosed: false,
         };
       }
@@ -644,6 +564,7 @@
       }
 
       const surveyRoot = document.getElementById("survey-root");
+      const liveTitle = document.getElementById("live-title");
       const liveMeta = document.getElementById("live-meta");
       const liveBlocks = document.getElementById("live-blocks");
       const layout = document.getElementById("layout");
@@ -652,6 +573,7 @@
 
       let db = null;
       let pollRef = null;
+      let auth = null;
       let pollData = defaultPoll();
       let step = 0;
       const answers = [];
@@ -666,15 +588,14 @@
       }
 
       function renderLive(data) {
+        const closed = data.sessionClosed === true;
         const totals = data.totals || defaultPoll().totals;
-        const sub = data.submissionCount ?? 0;
-        const target = data.targetParticipants;
-        const vis = data.visitorCount ?? 0;
-        liveMeta.innerHTML =
-          `<strong>${esc(String(sub))}</strong> прошли опрос · <strong>${esc(String(vis))}</strong> зашли по ссылке` +
-          (target && target > 0
-            ? ` · план для автофинала: <strong>${esc(String(target))}</strong>`
-            : "");
+        if (liveTitle) liveTitle.textContent = closed ? "Итоги опроса" : "Статистика";
+        if (liveMeta) {
+          liveMeta.innerHTML = closed
+            ? `Распределение ответов по вопросам`
+            : "";
+        }
 
         let html = "";
         for (let qi = 0; qi < 4; qi++) {
@@ -702,17 +623,7 @@
         liveBlocks.innerHTML = html;
       }
 
-      function updateCounterBadge() {
-        const doneEl = document.getElementById("c-done");
-        const visitEl = document.getElementById("c-visit");
-        if (!doneEl || !visitEl) return;
-        const sub = pollData.submissionCount ?? 0;
-        const vis = pollData.visitorCount ?? 0;
-        doneEl.textContent = String(sub);
-        visitEl.textContent = String(vis);
-      }
-
-      /** Статистика справа и на весь экран только после закрытия сессии (план набран или кнопка админа). До этого счётчики в Firebase всё равно обновляются. */
+      /** Итоги у участников только после «Показать результат» в админке (sessionClosed). */
       function applyLayout() {
         const closed = pollData.sessionClosed === true;
         const liveEl = document.getElementById("live-col");
@@ -733,16 +644,6 @@
           return;
         }
         if (userDone) {
-          const sub = pollData.submissionCount ?? 0;
-          const vis = pollData.visitorCount ?? 0;
-          const t = pollData.targetParticipants;
-          const hasPlan = t && t > 0;
-          const waitMsg =
-            hasPlan && sub < t
-              ? "Когда число завершивших совпадёт с планом, для всех откроется общая статистика."
-              : hasPlan
-                ? "Открываем статистику…"
-                : "Спасибо, ваши ответы сохранены.";
           surveyRoot.innerHTML =
             `<div class="thanks">
               <svg width="52" height="52" viewBox="0 0 56 56" fill="none" aria-hidden="true">
@@ -750,18 +651,7 @@
                 <path d="M16 28.5l8.5 8.5L40 19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
               <h1>Спасибо, что прошли опрос</h1>
-              <div class="thanks-counter counter-wrap">
-                <div class="counter-pair">
-                  <span class="counter-num">${esc(String(sub))}</span>
-                  <span class="counter-label">прошли опрос</span>
-                </div>
-                <span class="sep">/</span>
-                <div class="counter-pair">
-                  <span class="counter-num">${esc(String(vis))}</span>
-                  <span class="counter-label">зашли по ссылке</span>
-                </div>
-              </div>
-              <p class="thanks-sub">${esc(waitMsg)}</p>
+              <p class="thanks-sub">Ваши ответы сохранены. Общие итоги и статистику можно будет посмотреть в конце мероприятия — после завершения сессии ведущий откроет результаты на экране.</p>
             </div>`;
           return;
         }
@@ -825,7 +715,7 @@
       }
 
       async function submitAnswers() {
-        if (sending || !pollRef || !db) return;
+        if (sending || !pollRef || !db || !auth?.currentUser) return;
         sending = true;
         const errEl = document.getElementById("survey-err");
         if (errEl) errEl.hidden = true;
@@ -839,19 +729,26 @@
           if (ans.some((x) => !KEYS.includes(x))) {
             throw new Error("bad answers");
           }
+          const uid = auth.currentUser.uid;
+          const submissionRef = doc(db, POLL_DOC[0], POLL_DOC[1], "submissions", uid);
+          const visitorRef = doc(db, POLL_DOC[0], POLL_DOC[1], "visitors", uid);
           await runTransaction(db, async (transaction) => {
-            const snap = await transaction.get(pollRef);
-            const data = snap.exists() ? snap.data() : defaultPoll();
-            const prev = data.submissionCount || 0;
+            const subSnap = await transaction.get(submissionRef);
+            if (subSnap.exists()) {
+              throw new Error("__already_submitted__");
+            }
+            const vSnap = await transaction.get(visitorRef);
+            await transaction.get(pollRef);
             const updates = {};
             for (let i = 0; i < 4; i++) {
               updates[`totals.q${i}.${ans[i]}`] = increment(1);
             }
             updates.submissionCount = increment(1);
-            const target = data.targetParticipants;
-            if (target && target > 0 && prev + 1 >= target) {
-              updates.sessionClosed = true;
+            if (!vSnap.exists()) {
+              transaction.set(visitorRef, { v: 1 });
+              updates.visitorCount = increment(1);
             }
+            transaction.set(submissionRef, { s: 1 });
             transaction.update(pollRef, updates);
           });
           userDone = true;
@@ -859,6 +756,12 @@
         } catch (e) {
           console.error(e);
           sending = false;
+          const msg = e && (e.message || String(e));
+          if (msg && String(msg).includes("__already_submitted__")) {
+            userDone = true;
+            renderSurvey();
+            return;
+          }
           if (btn) {
             btn.disabled = false;
             btn.textContent = "Отправить";
@@ -875,7 +778,6 @@
       function syncFromPoll(data) {
         pollData = { ...defaultPoll(), ...data };
         if (!pollData.totals) pollData.totals = defaultPoll().totals;
-        updateCounterBadge();
         renderLive(pollData);
         applyLayout();
         renderSurvey();
@@ -886,8 +788,8 @@
         setupWarning.innerHTML =
           `<strong>Firebase не настроен.</strong> В консоли Firebase: включите <strong>Firestore</strong>, в Authentication → Sign-in method — <strong>Анонимный</strong>, ` +
           `в Authentication → Settings → <strong>Authorized domains</strong> добавьте домен хостинга (например <code>username.github.io</code> или свой сайт). ` +
-          `Проверьте <code>assets/firebase-config.js</code>. В Firestore Rules нужен доступ к <code>poll/.../visitors/{uid}</code> — см. комментарий в том файле.`;
-        liveMeta.textContent = "Нет подключения к базе";
+          `Проверьте <code>assets/firebase-config.js</code>. В Rules нужны <code>visitors/{uid}</code> и <code>submissions/{uid}</code> — см. комментарий в том файле.`;
+        if (liveMeta) liveMeta.textContent = "";
         liveBlocks.innerHTML = "";
       }
 
@@ -920,12 +822,12 @@
           showSetupMessage();
           surveyRoot.innerHTML =
             `<p class="kicker">Опрос · HR и ОПК</p>
-            <p style="color:var(--muted)">После настройки Firebase здесь появятся вопросы и живая статистика.</p>`;
+            <p style="color:var(--muted)">После настройки Firebase здесь появятся вопросы.</p>`;
           return;
         }
 
         const app = initializeApp(FIREBASE_CONFIG);
-        const auth = getAuth(app);
+        auth = getAuth(app);
         await signInAnonymously(auth);
         db = getFirestore(app);
         pollRef = doc(db, POLL_DOC[0], POLL_DOC[1]);
@@ -935,6 +837,11 @@
           await setDoc(pollRef, defaultPoll());
           snap = await getDoc(pollRef);
         }
+
+        const uid = auth.currentUser.uid;
+        const submissionRef = doc(db, POLL_DOC[0], POLL_DOC[1], "submissions", uid);
+        const alreadySubmitted = await getDoc(submissionRef);
+        if (alreadySubmitted.exists()) userDone = true;
 
         await countVisitorOnce(auth);
 

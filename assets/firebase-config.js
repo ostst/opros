@@ -15,6 +15,10 @@
  *       match /visitors/{visitorId} {
  *         allow read, create: if request.auth != null && request.auth.uid == visitorId;
  *       }
+ *
+ *       match /submissions/{submissionId} {
+ *         allow read, create: if request.auth != null && request.auth.uid == submissionId;
+ *       }
  *     }
  *   }
  * }
