@@ -56,10 +56,34 @@
         z-index: 1;
         max-width: 1180px;
         margin: 0 auto;
-        padding: 20px 20px calc(100px + var(--safe-bottom));
+        padding: 20px 20px calc(28px + var(--safe-bottom));
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .counter-badge {
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        font-size: 1.125rem;
+        padding: 10px 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(28, 31, 38, 0.06);
+        color: var(--navy);
+      }
+      .counter-badge .sep {
+        opacity: 0.45;
+        font-weight: 600;
+        margin: 0 2px;
       }
       .brand {
-        margin-bottom: 16px;
+        margin-bottom: 0;
       }
       .brand-link {
         display: inline-block;
@@ -92,8 +116,14 @@
         gap: 24px;
         align-items: start;
       }
+      .layout--survey-only {
+        grid-template-columns: 1fr;
+      }
+      .live-col--hidden {
+        display: none !important;
+      }
       @media (max-width: 960px) {
-        .layout {
+        .layout:not(.layout--stats-only) {
           grid-template-columns: 1fr;
         }
       }
@@ -375,66 +405,28 @@
         color: var(--muted);
         font-size: 0.9375rem;
       }
+      .thanks-counter {
+        margin: 20px auto 0;
+        font-size: clamp(2rem, 8vw, 2.75rem);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: var(--navy);
+        letter-spacing: -0.02em;
+      }
+      .thanks-counter .sep {
+        opacity: 0.45;
+        font-weight: 600;
+        margin: 0 0.15em;
+      }
+      .thanks-sub {
+        margin-top: 12px !important;
+        max-width: 22em;
+        margin-left: auto;
+        margin-right: auto;
+      }
       .panel {
         display: flex;
         flex-direction: column;
-      }
-      .admin-bar {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        z-index: 50;
-        background: var(--surface);
-        border-top: 1px solid var(--border);
-        padding: 12px 16px calc(12px + var(--safe-bottom));
-        box-shadow: 0 -8px 30px rgba(28, 31, 38, 0.08);
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px 14px;
-        align-items: center;
-        max-width: 1180px;
-        margin: 0 auto;
-      }
-      .admin-bar[hidden] {
-        display: none !important;
-      }
-      .admin-bar label {
-        font-size: 0.8rem;
-        color: var(--muted);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      .admin-bar input[type="password"],
-      .admin-bar input[type="number"] {
-        font: inherit;
-        padding: 8px 10px;
-        border-radius: 8px;
-        border: 1px solid var(--border);
-        width: 120px;
-      }
-      .admin-bar input[type="number"] {
-        width: 72px;
-      }
-      .admin-bar button {
-        font: inherit;
-        font-weight: 600;
-        padding: 8px 14px;
-        border-radius: 8px;
-        border: none;
-        cursor: pointer;
-        background: var(--navy);
-        color: #fff;
-      }
-      .admin-bar .btn-danger {
-        background: #fff;
-      }
-      .admin-hint {
-        width: 100%;
-        font-size: 0.75rem;
-        color: var(--muted);
-        margin: 0;
       }
       .big-stats .mini-row {
         font-size: 0.85rem;
@@ -446,17 +438,27 @@
   </head>
   <body>
     <div class="shell">
-      <header class="brand">
-        <a class="brand-link" href="https://psb-academy.ru/" target="_blank" rel="noopener noreferrer">
-          <img class="brand-logo" src="assets/logo.svg" width="160" height="44" alt="Академия ПСБ" />
-        </a>
-      </header>
+      <div class="topbar">
+        <header class="brand">
+          <a class="brand-link" href="https://psb-academy.ru/" target="_blank" rel="noopener noreferrer">
+            <img class="brand-logo" src="assets/logo.svg" width="160" height="44" alt="Академия ПСБ" />
+          </a>
+        </header>
+        <div
+          class="counter-badge"
+          id="counter-badge"
+          title="Завершили / план (план задаётся на странице /admin/)"
+          aria-live="polite"
+        >
+          0<span class="sep">/</span>—
+        </div>
+      </div>
 
       <div id="setup-warning" class="setup-warning" hidden></div>
 
       <div class="layout" id="layout">
         <div class="survey-col" id="survey-root"></div>
-        <aside class="live-col" id="live-root">
+        <aside class="live-col live-col--hidden" id="live-col">
           <p class="live-title">Статистика в реальном времени</p>
           <p class="live-meta" id="live-meta">Подключение…</p>
           <div id="live-blocks"></div>
@@ -464,24 +466,7 @@
       </div>
     </div>
 
-    <div id="admin-bar" class="admin-bar" hidden>
-      <p class="admin-hint">
-        Админ: укажите ожидаемое число участников — после последней анкеты опрос закроется автоматически. Или нажмите «Показать только статистику».
-      </p>
-      <label>
-        PIN
-        <input type="password" id="admin-pin" placeholder="••••" autocomplete="off" />
-      </label>
-      <label>
-        Всего участников
-        <input type="number" id="admin-target" min="1" placeholder="—" title="После N анкет — только статистика" />
-      </label>
-      <button type="button" id="btn-save-target">Сохранить план</button>
-      <button type="button" id="btn-close-session">Только статистика</button>
-      <button type="button" id="btn-reopen">Снова опрос</button>
-      <button type="button" class="btn-danger" id="btn-reset">Сбросить всё</button>
-    </div>
-
+    <script src="assets/firebase-config.js"></script>
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
       import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
@@ -493,24 +478,11 @@
         onSnapshot,
         runTransaction,
         increment,
-        updateDoc,
       } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
-      /** ========= НАСТРОЙКИ ========= */
-      const FIREBASE_CONFIG = {
-        apiKey: "AIzaSyCzmmtCnhFDoDXUjceaPqTmFef-jgU4w9I",
-        authDomain: "opros-e12b8.firebaseapp.com",
-        projectId: "opros-e12b8",
-        storageBucket: "opros-e12b8.firebasestorage.app",
-        messagingSenderId: "668010332685",
-        appId: "1:668010332685:web:919016539d61230d664b44",
-        measurementId: "G-T4LW4Q0LCF",
-      };
-
-      /** PIN для кнопок админ-панели (смените перед мероприятием) */
-      const ADMIN_PIN = "1234";
-
-      const POLL_DOC = ["poll", "main"];
+      const FB = window.OPK_FIREBASE;
+      const FIREBASE_CONFIG = FB?.config;
+      const POLL_DOC = FB?.pollDoc ?? ["poll", "main"];
 
       const QUESTIONS = [
         {
@@ -604,8 +576,8 @@
       }
 
       function isConfigReady() {
-        const c = FIREBASE_CONFIG;
-        return c.apiKey && !String(c.apiKey).includes("ВАШ") && c.projectId && !String(c.projectId).includes("ВАШ");
+        const c = window.OPK_FIREBASE?.config;
+        return !!(c && c.apiKey && c.projectId);
       }
 
       const surveyRoot = document.getElementById("survey-root");
@@ -613,7 +585,6 @@
       const liveBlocks = document.getElementById("live-blocks");
       const layout = document.getElementById("layout");
       const setupWarning = document.getElementById("setup-warning");
-      const adminBar = document.getElementById("admin-bar");
 
       let db = null;
       let pollRef = null;
@@ -634,11 +605,11 @@
         const totals = data.totals || defaultPoll().totals;
         const sub = data.submissionCount ?? 0;
         const target = data.targetParticipants;
-        let meta = `Анкет: <strong>${esc(String(sub))}</strong>`;
-        if (target && target > 0) {
-          meta += ` · план: <strong>${esc(String(target))}</strong>`;
-        }
-        liveMeta.innerHTML = meta;
+        liveMeta.innerHTML =
+          `Собрано анкет: <strong>${esc(String(sub))}</strong>` +
+          (target && target > 0
+            ? ` · план: <strong>${esc(String(target))}</strong>`
+            : "");
 
         let html = "";
         for (let qi = 0; qi < 4; qi++) {
@@ -666,12 +637,30 @@
         liveBlocks.innerHTML = html;
       }
 
+      function updateCounterBadge() {
+        const el = document.getElementById("counter-badge");
+        if (!el) return;
+        const sub = pollData.submissionCount ?? 0;
+        const t = pollData.targetParticipants;
+        if (t && t > 0) {
+          el.innerHTML = `${esc(String(sub))}<span class="sep">/</span>${esc(String(t))}`;
+        } else {
+          el.innerHTML = `${esc(String(sub))}<span class="sep">/</span>—`;
+          el.title = "Задайте план на странице admin/ (ссылка в конце инструкции)";
+        }
+      }
+
+      /** Статистика справа и на весь экран только после закрытия сессии (план набран или кнопка админа). До этого счётчики в Firebase всё равно обновляются. */
       function applyLayout() {
         const closed = pollData.sessionClosed === true;
+        const liveEl = document.getElementById("live-col");
+        if (liveEl) {
+          liveEl.classList.toggle("live-col--hidden", !closed);
+          liveEl.classList.toggle("big-stats", closed);
+        }
+        layout.classList.toggle("layout--survey-only", !closed);
         layout.classList.toggle("layout--stats-only", closed);
         document.body.classList.toggle("session-closed", closed);
-        const live = document.querySelector(".live-col");
-        if (live) live.classList.toggle("big-stats", closed);
       }
 
       function renderSurvey() {
@@ -681,14 +670,25 @@
           return;
         }
         if (userDone) {
+          const sub = pollData.submissionCount ?? 0;
+          const t = pollData.targetParticipants;
+          const hasPlan = t && t > 0;
+          const counterLine = hasPlan ? `${esc(String(sub))}<span class="sep">/</span>${esc(String(t))}` : `${esc(String(sub))}<span class="sep">/</span>—`;
+          const waitMsg =
+            hasPlan && sub < t
+              ? "Когда число завершивших совпадёт с планом, для всех откроется общая статистика."
+              : hasPlan
+                ? "Открываем статистику…"
+                : "Задайте план на странице /admin/, чтобы включить общий финал.";
           surveyRoot.innerHTML =
             `<div class="thanks">
               <svg width="52" height="52" viewBox="0 0 56 56" fill="none" aria-hidden="true">
                 <circle cx="28" cy="28" r="26" stroke="currentColor" stroke-width="2" opacity="0.25"/>
                 <path d="M16 28.5l8.5 8.5L40 19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
-              <h1>Спасибо</h1>
-              <p>Ответы учтены. Справа — общая статистика в реальном времени.</p>
+              <h1>Спасибо, что прошли опрос</h1>
+              <div class="thanks-counter">${counterLine}</div>
+              <p class="thanks-sub">${esc(waitMsg)}</p>
             </div>`;
           return;
         }
@@ -802,14 +802,10 @@
       function syncFromPoll(data) {
         pollData = { ...defaultPoll(), ...data };
         if (!pollData.totals) pollData.totals = defaultPoll().totals;
+        updateCounterBadge();
         renderLive(pollData);
         applyLayout();
         renderSurvey();
-        const targetInput = document.getElementById("admin-target");
-        if (targetInput) {
-          const t = pollData.targetParticipants;
-          targetInput.value = t && t > 0 ? String(t) : "";
-        }
       }
 
       function showSetupMessage() {
@@ -817,7 +813,7 @@
         setupWarning.innerHTML =
           `<strong>Firebase не настроен.</strong> В консоли Firebase: включите <strong>Firestore</strong>, в Authentication → Sign-in method — <strong>Анонимный</strong>, ` +
           `в Authentication → Settings → <strong>Authorized domains</strong> добавьте домен хостинга (например <code>username.github.io</code> или свой сайт). ` +
-          `Вставьте веб-конфиг в <code>FIREBASE_CONFIG</code> в этом файле. Правила Firestore (упрощённо): ` +
+          `Проверьте файл <code>assets/firebase-config.js</code>. Правила Firestore (упрощённо): ` +
           `<code>match /poll/{id} { allow read: if true; allow create, update: if request.auth != null; }</code>`;
         liveMeta.textContent = "Нет подключения к базе";
         liveBlocks.innerHTML = "";
@@ -856,52 +852,7 @@
         );
       }
 
-      /** Админ: ?admin=1 */
-      function initAdmin() {
-        const params = new URLSearchParams(location.search);
-        if (params.get("admin") !== "1") return;
-        adminBar.hidden = false;
-        const pinInput = document.getElementById("admin-pin");
-        const targetInput = document.getElementById("admin-target");
-
-        function requirePin() {
-          if (sessionStorage.getItem("opk_admin") === "1") return true;
-          if (pinInput.value !== ADMIN_PIN) {
-            alert("Введите PIN в поле ниже.");
-            return false;
-          }
-          sessionStorage.setItem("opk_admin", "1");
-          pinInput.value = "";
-          return true;
-        }
-
-        document.getElementById("btn-save-target").addEventListener("click", async () => {
-          if (!pollRef || !requirePin()) return;
-          const v = parseInt(targetInput.value, 10);
-          await updateDoc(pollRef, {
-            targetParticipants: Number.isFinite(v) && v > 0 ? v : null,
-          });
-        });
-
-        document.getElementById("btn-close-session").addEventListener("click", async () => {
-          if (!pollRef || !requirePin()) return;
-          await updateDoc(pollRef, { sessionClosed: true });
-        });
-
-        document.getElementById("btn-reopen").addEventListener("click", async () => {
-          if (!pollRef || !requirePin()) return;
-          if (!confirm("Снова показать вопросы всем участникам?")) return;
-          await updateDoc(pollRef, { sessionClosed: false });
-        });
-
-        document.getElementById("btn-reset").addEventListener("click", async () => {
-          if (!pollRef || !requirePin()) return;
-          if (!confirm("Обнулить все ответы? Это нельзя отменить.")) return;
-          await setDoc(pollRef, defaultPoll());
-        });
-      }
-
-      init().then(() => initAdmin());
+      init();
     </script>
   </body>
 </html>

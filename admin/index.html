@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f0f2f6" />
+    <title>Админ — опрос Академия ПСБ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f0f2f6;
+        --surface: #ffffff;
+        --border: #dde1ea;
+        --text: #1c1f26;
+        --muted: #5c6473;
+        --navy: #2b2c84;
+        --radius: 16px;
+        --font: "Manrope", system-ui, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.45;
+        min-height: 100dvh;
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px 20px 48px;
+      }
+      .top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .brand img {
+        height: 36px;
+        width: auto;
+      }
+      .nav a {
+        color: var(--navy);
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .nav a:hover {
+        text-decoration: underline;
+      }
+      .counter {
+        font-size: 1.25rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        padding: 10px 18px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+      .counter .sep {
+        opacity: 0.45;
+        margin: 0 4px;
+      }
+      .status {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+      }
+      .status.open {
+        background: #e8f5e9;
+        color: #1b5e20;
+      }
+      .status.closed {
+        background: #e3f2fd;
+        color: #0d47a1;
+      }
+      .gate {
+        max-width: 400px;
+        margin: 15vh auto;
+        padding: 28px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+      }
+      .gate h1 {
+        margin: 0 0 16px;
+        font-size: 1.25rem;
+      }
+      .gate label {
+        display: block;
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+      .gate input {
+        width: 100%;
+        padding: 12px 14px;
+        font: inherit;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 16px;
+      }
+      .btn {
+        font: inherit;
+        font-weight: 600;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        background: var(--navy);
+        color: #fff;
+        width: 100%;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: flex-end;
+        margin-bottom: 28px;
+        padding: 18px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+      .controls label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+      .controls input[type="number"] {
+        width: 100px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        font: inherit;
+      }
+      .controls .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 100%;
+      }
+      .controls button {
+        font: inherit;
+        font-weight: 600;
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        background: var(--navy);
+        color: #fff;
+      }
+      .controls button.secondary {
+        background: var(--surface);
+        color: var(--navy);
+        border: 1px solid var(--border);
+      }
+      .controls button.danger {
+        background: #fff;
+        color: #b42318;
+        border: 1px solid #f5c4c0;
+      }
+      .block {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px 16px;
+        margin-bottom: 18px;
+      }
+      .mini-q {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--navy);
+        margin: 0 0 10px;
+        line-height: 1.35;
+      }
+      .mini-row {
+        display: grid;
+        grid-template-columns: 1fr minmax(80px, 26%) auto;
+        gap: 8px 12px;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 0.82rem;
+      }
+      @media (max-width: 600px) {
+        .mini-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .mini-track {
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(43, 44, 132, 0.1);
+        overflow: hidden;
+      }
+      .mini-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--navy), #5a5cb8);
+        border-radius: inherit;
+        transition: width 0.35s ease;
+      }
+      .mini-pct {
+        font-weight: 700;
+        text-align: right;
+      }
+      .mini-n {
+        font-size: 0.8rem;
+        color: var(--muted);
+        text-align: right;
+      }
+      .err {
+        color: #c41e1e;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div id="gate" class="gate">
+        <h1>Вход для администратора</h1>
+        <label for="pin-in">PIN</label>
+        <input type="password" id="pin-in" autocomplete="off" placeholder="••••" />
+        <p id="gate-err" class="err" hidden></p>
+        <button type="button" class="btn" id="btn-enter">Войти</button>
+      </div>
+
+      <div id="panel" hidden>
+        <div class="top">
+          <a class="brand" href="https://psb-academy.ru/" target="_blank" rel="noopener noreferrer">
+            <img src="../assets/logo.svg" width="160" height="44" alt="Академия ПСБ" />
+          </a>
+          <div class="counter" id="adm-counter" aria-live="polite">0<span class="sep">/</span>—</div>
+          <nav class="nav"><a href="../index.html">← К опросу</a></nav>
+        </div>
+
+        <div id="adm-status"></div>
+        <div class="controls">
+          <label>
+            План (всего участников)
+            <input type="number" id="adm-target" min="1" placeholder="например 22" />
+          </label>
+          <div class="btn-row">
+            <button type="button" id="adm-save-plan">Сохранить план</button>
+            <button type="button" class="secondary" id="adm-reopen">Снова открыть опрос</button>
+            <button type="button" id="adm-show-result">Показать результат</button>
+            <button type="button" class="danger" id="adm-reset">Сбросить всё</button>
+          </div>
+        </div>
+
+        <p style="color: var(--muted); font-size: 0.9rem; margin-top: -12px; margin-bottom: 20px">
+          Ниже — как проходят ответы (обновляется в реальном времени). «Показать результат» откроет общую статистику всем участникам на странице опроса.
+        </p>
+
+        <div id="adm-stats"></div>
+      </div>
+    </div>
+
+    <script src="../assets/firebase-config.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+      import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+      import {
+        getFirestore,
+        doc,
+        getDoc,
+        setDoc,
+        onSnapshot,
+        updateDoc,
+      } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+      const FB = window.OPK_FIREBASE;
+      const FIREBASE_CONFIG = FB?.config;
+      const ADMIN_PIN = FB?.adminPin ?? "1234";
+      const POLL_DOC = FB?.pollDoc ?? ["poll", "main"];
+
+      const KEYS = ["a", "b", "c", "d"];
+
+      const QUESTIONS = [
+        {
+          text:
+            "С каким ключевым вызовом в управлении персоналом на предприятиях ОПК вы сталкиваетесь сегодня?",
+        },
+        {
+          text:
+            "Чего, на ваш взгляд, больше всего не хватает HR-лидерам ОПК для эффективной трансформации отрасли?",
+        },
+        {
+          text: "Какой формат взаимодействия в рамках профессионального сообщества был бы для вас наиболее ценным?",
+        },
+        {
+          text:
+            "Какую компетенцию или ресурс вы лично были бы готовы привнести в закрытое сообщество лидеров ОПК?",
+        },
+      ];
+
+      const SHORT = [
+        [
+          ["А", "Кадровый голод…"],
+          ["Б", "Устаревшие HR-процессы…"],
+          ["В", "Выгорание…"],
+          ["Г", "Конкуренция с ИТ…"],
+        ],
+        [
+          ["А", "Площадка для кейсов…"],
+          ["Б", "Позиция GR…"],
+          ["В", "Образование для ОПК…"],
+          ["Г", "Безопасная среда…"],
+        ],
+        [
+          ["А", "Офлайн-встречи…"],
+          ["Б", "Банк знаний…"],
+          ["В", "Предложения регуляторам…"],
+          ["Г", "Менторство…"],
+        ],
+        [
+          ["А", "Опыт HR-проектов…"],
+          ["Б", "GR-повестка…"],
+          ["В", "Эксперт / ментор…"],
+          ["Г", "Только слушать…"],
+        ],
+      ];
+
+      function defaultPoll() {
+        return {
+          totals: {
+            q0: { a: 0, b: 0, c: 0, d: 0 },
+            q1: { a: 0, b: 0, c: 0, d: 0 },
+            q2: { a: 0, b: 0, c: 0, d: 0 },
+            q3: { a: 0, b: 0, c: 0, d: 0 },
+          },
+          submissionCount: 0,
+          targetParticipants: null,
+          sessionClosed: false,
+        };
+      }
+
+      function esc(s) {
+        const d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+      }
+
+      function pctFor(totals, k, sum) {
+        const v = totals[k] || 0;
+        if (sum <= 0) return 0;
+        return Math.round((v / sum) * 1000) / 10;
+      }
+
+      function renderStats(data) {
+        const totals = data.totals || defaultPoll().totals;
+        const sub = data.submissionCount ?? 0;
+        const target = data.targetParticipants;
+        const el = document.getElementById("adm-counter");
+        if (el) {
+          el.innerHTML = target && target > 0
+            ? `${esc(String(sub))}<span class="sep">/</span>${esc(String(target))}`
+            : `${esc(String(sub))}<span class="sep">/</span>—`;
+        }
+
+        const st = document.getElementById("adm-status");
+        if (st) {
+          const closed = data.sessionClosed === true;
+          st.innerHTML = closed
+            ? `<span class="status closed">Итог на экране у участников: включён (показана общая статистика)</span>`
+            : `<span class="status open">Итог на экране: выключен (идёт опрос)</span>`;
+        }
+
+        const targetInput = document.getElementById("adm-target");
+        if (targetInput && document.activeElement !== targetInput) {
+          targetInput.value = target && target > 0 ? String(target) : "";
+        }
+
+        let html = "";
+        for (let qi = 0; qi < 4; qi++) {
+          const t = totals["q" + qi] || { a: 0, b: 0, c: 0, d: 0 };
+          const sum = KEYS.reduce((s, key) => s + (t[key] || 0), 0);
+          let maxP = 1;
+          KEYS.forEach((k) => {
+            const p = pctFor(t, k, sum);
+            if (p > maxP) maxP = p;
+          });
+          html += `<div class="block"><p class="mini-q">${esc(QUESTIONS[qi].text)}</p>`;
+          for (let oi = 0; oi < 4; oi++) {
+            const k = KEYS[oi];
+            const p = pctFor(t, k, sum);
+            const w = maxP > 0 ? (p / maxP) * 100 : 0;
+            const lab = SHORT[qi][oi];
+            html += `<div class="mini-row">
+              <div><strong>${esc(lab[0])}</strong> ${esc(lab[1])}</div>
+              <div class="mini-track"><div class="mini-fill" style="width:${w}%"></div></div>
+              <div><div class="mini-pct">${esc(String(p))}%</div><div class="mini-n">${esc(String(t[k] || 0))}</div></div>
+            </div>`;
+          }
+          html += "</div>";
+        }
+        document.getElementById("adm-stats").innerHTML = html;
+      }
+
+      const SESSION_KEY = "opk_admin";
+
+      function showPanel() {
+        document.getElementById("gate").hidden = true;
+        document.getElementById("panel").hidden = false;
+      }
+
+      function tryGate() {
+        if (sessionStorage.getItem(SESSION_KEY) === "1") {
+          showPanel();
+          return true;
+        }
+        return false;
+      }
+
+      document.getElementById("btn-enter").addEventListener("click", () => {
+        const err = document.getElementById("gate-err");
+        err.hidden = true;
+        const v = document.getElementById("pin-in").value;
+        if (v !== ADMIN_PIN) {
+          err.textContent = "Неверный PIN";
+          err.hidden = false;
+          return;
+        }
+        sessionStorage.setItem(SESSION_KEY, "1");
+        showPanel();
+        startFirebase();
+      });
+
+      let pollRef = null;
+
+      async function startFirebase() {
+        if (!FIREBASE_CONFIG?.apiKey) {
+          document.getElementById("adm-stats").innerHTML =
+            `<p class="err">Нет конфига. Проверьте файл assets/firebase-config.js</p>`;
+          return;
+        }
+        const app = initializeApp(FIREBASE_CONFIG);
+        await signInAnonymously(getAuth(app));
+        const db = getFirestore(app);
+        pollRef = doc(db, POLL_DOC[0], POLL_DOC[1]);
+
+        const snap = await getDoc(pollRef);
+        if (!snap.exists()) await setDoc(pollRef, defaultPoll());
+
+        onSnapshot(pollRef, (s) => {
+          renderStats(s.exists() ? s.data() : defaultPoll());
+        });
+      }
+
+      document.getElementById("adm-save-plan").addEventListener("click", async () => {
+        if (!pollRef) return;
+        const v = parseInt(document.getElementById("adm-target").value, 10);
+        await updateDoc(pollRef, {
+          targetParticipants: Number.isFinite(v) && v > 0 ? v : null,
+        });
+      });
+
+      document.getElementById("adm-show-result").addEventListener("click", async () => {
+        if (!pollRef) return;
+        if (!confirm("Показать общую статистику всем на странице опроса?")) return;
+        await updateDoc(pollRef, { sessionClosed: true });
+      });
+
+      document.getElementById("adm-reopen").addEventListener("click", async () => {
+        if (!pollRef) return;
+        if (!confirm("Снова показать вопросы участникам?")) return;
+        await updateDoc(pollRef, { sessionClosed: false });
+      });
+
+      document.getElementById("adm-reset").addEventListener("click", async () => {
+        if (!pollRef) return;
+        if (!confirm("Обнулить все ответы?")) return;
+        await setDoc(pollRef, defaultPoll());
+      });
+
+      if (tryGate()) startFirebase();
+    </script>
+  </body>
+</html>
