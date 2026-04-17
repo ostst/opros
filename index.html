@@ -682,7 +682,7 @@
         liveBlocks.innerHTML = html;
       }
 
-      /** Итоги у участников только после «Показать результат» в админке (sessionClosed). Колонка с опросом/спасибо остаётся всегда. */
+      /** До показа итогов — одна колонка с опросом; после «Показать результат» — скрываем опрос/спасибо, только блок с итогами. */
       function applyLayout() {
         const closed = pollData.sessionClosed === true;
         const liveEl = document.getElementById("live-col");
@@ -690,13 +690,18 @@
           liveEl.classList.toggle("live-col--hidden", !closed);
           liveEl.classList.toggle("big-stats", closed);
         }
+        layout.classList.toggle("layout--stats-only", closed);
         layout.classList.toggle("layout--survey-only", !closed);
-        layout.classList.remove("layout--stats-only");
         document.body.classList.toggle("session-closed", closed);
         if (sessionBanner) sessionBanner.hidden = !closed;
       }
 
       function renderSurvey() {
+        const closed = pollData.sessionClosed === true;
+        if (closed) {
+          surveyRoot.innerHTML = "";
+          return;
+        }
         if (userDone) {
           surveyRoot.innerHTML =
             `<div class="thanks">
