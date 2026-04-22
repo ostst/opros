@@ -403,6 +403,7 @@
           <div id="adm-q-root"></div>
           <div class="adm-q-actions">
             <button type="button" class="secondary" id="adm-q-add">+ Добавить вопрос</button>
+            <button type="button" class="secondary" id="adm-q-from-file">Загрузить вопросы из файла</button>
             <button type="button" id="adm-q-save">Сохранить вопросы</button>
           </div>
           <p id="adm-q-msg" class="err" hidden style="margin-top: 12px"></p>
@@ -677,6 +678,24 @@
             allowMultiple: true,
           });
           renderQuestionEditor();
+        });
+
+        document.getElementById("adm-q-from-file").addEventListener("click", () => {
+          if (!confirm("Загрузить актуальные вопросы из файла конфигурации и заменить текущие в редакторе?")) return;
+          const fromFile = OPK_poll.deepCloneQuestions();
+          if (!Array.isArray(fromFile) || fromFile.length === 0) {
+            const msg = document.getElementById("adm-q-msg");
+            msg.textContent = "Не удалось загрузить вопросы из файла.";
+            msg.style.color = "#c41e1e";
+            msg.hidden = false;
+            return;
+          }
+          editorDraft = fromFile;
+          renderQuestionEditor();
+          const msg = document.getElementById("adm-q-msg");
+          msg.textContent = "Вопросы из файла загружены в редактор. Нажмите «Сохранить вопросы», чтобы применить их в опросе.";
+          msg.style.color = "#1b5e20";
+          msg.hidden = false;
         });
 
         document.getElementById("adm-q-save").addEventListener("click", async () => {
