@@ -357,19 +357,25 @@
         <div class="controls">
           <div class="btn-row">
             <button type="button" class="secondary" id="adm-reopen">Снова открыть опрос</button>
-            <button type="button" id="adm-show-result">Показать результат участникам</button>
-            <button type="button" class="danger" id="adm-reset">Сбросить всё</button>
+            <button type="button" id="adm-show-result">Показать результат на большом экране</button>
+            <button type="button" class="danger" id="adm-reset">Сбросить ответы и счётчики</button>
+            <button type="button" class="secondary" id="adm-pick-winners">Случайный розыгрыш: 3 номера</button>
+            <button type="button" class="secondary" id="adm-clear-raffle" style="display: none">Скрыть номера на экране</button>
           </div>
         </div>
+        <p id="adm-winners-out" style="display: none; margin: 0 0 16px; padding: 12px 14px; background: #f5f7ff; border: 1px solid #c5d4f0; border-radius: 10px; font-size: 0.95rem" aria-live="polite"></p>
 
         <p style="color: var(--muted); font-size: 0.9rem; margin-top: -12px; margin-bottom: 20px">
-          Итоги на экранах участников открываются <strong>только</strong> кнопкой «Показать результат участникам». Число сверху — завершившие опрос; строка ниже — уникальные заходы по QR.
+          Графики итогов — <strong>только</strong> на странице для большого экрана (ссылка ниже). Кнопка «Показать результат на большом экране» открывает итоги там. Кнопка «Случайный розыгрыш: 3 номера» сохраняет три числа и <strong>показывает их на том же экране</strong> (крупно); на телефонах не дублируется. Число сверху — завершившие опрос; строка ниже — уникальные заходы по ссылке.
+        </p>
+        <p style="margin: -8px 0 20px; font-size: 0.9rem">
+          <a href="../display.html" target="_blank" rel="noopener noreferrer" id="adm-link-display">Открыть экран «Результаты опроса» (для проектора)</a>
         </p>
 
         <div class="block" id="adm-welcome-wrap">
           <h2 class="adm-h2">Приветственный экран</h2>
           <p class="adm-note">
-            Текст до кнопки «Начать опрос» на странице опроса. В заголовке новая строка = перенос. В первом абзаце можно написать <code>{{nq}}</code> — подставится число вопросов (жирным).
+            Текст до кнопки «Начать опрос» на странице опроса. В заголовке новая строка = перенос. В первом абзаце можно написать <code>{{nq}}</code> — подставится число вопросов (жирным). Участники по умолчанию могут отмечать несколько вариантов на вопрос — учтите это в формулировке приветствия.
           </p>
           <label class="adm-lab" for="adm-w-kicker">Строка над заголовком (kicker)</label>
           <input
@@ -392,7 +398,7 @@
         <div class="block" id="adm-q-wrap">
           <h2 class="adm-h2">Вопросы опроса</h2>
           <p class="adm-note">
-            У каждого вопроса — текст и любое число вариантов (не меньше двух). После изменений нажмите «Сохранить вопросы». Счётчики по ответам переносятся по номерам вопроса и варианта; новые строки начинаются с нуля.
+            У каждого вопроса — текст и любое число вариантов (не меньше двух). По умолчанию участник может отметить <strong>несколько</strong> вариантов; снимите галочку «Несколько вариантов», если нужен только один ответ. После изменений нажмите «Сохранить вопросы». Счётчики показывают, сколько раз выбрали каждый вариант (при множественном выборе сумма по вопросу может быть больше числа анкет).
           </p>
           <div id="adm-q-root"></div>
           <div class="adm-q-actions">
@@ -422,6 +428,7 @@
         collection,
         getDocs,
         writeBatch,
+        deleteField,
       } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
 
       const FB = window.OPK_FIREBASE;
@@ -445,6 +452,22 @@
         return Math.round((v / sum) * 1000) / 10;
       }
 
+      function showRaffleMessage(nums, completedCount, submissionCountDoc) {
+        const out = document.getElementById("adm-winners-out");
+        if (!out) return;
+        const phrase = nums.map((n) => `участника под номером ${n}`).join(", ");
+        const cc = typeof completedCount === "number" ? completedCount : nums.length;
+        const mismatch =
+          typeof submissionCountDoc === "number" && submissionCountDoc !== cc
+            ? ` В документе опроса submissionCount = ${submissionCountDoc} (проверьте консистентность).`
+            : "";
+        out.style.display = "block";
+        out.innerHTML =
+          `<strong>Сейчас на большом экране:</strong> ${nums.join(", ")}.` +
+          `<br><strong>Для объявления:</strong> ${phrase} — прошу выйти на сцену за подарком.` +
+          `<br><span style="color:var(--muted);font-size:0.88em">Розыгрыш среди <strong>${cc}</strong> человек, реально прошедших опрос (номера из базы отправок).${mismatch} Повторное нажатие — новый набор.</span>`;
+      }
+
       function renderStats(data) {
         const raw = data || {};
         const norm = window.OPK_poll.normalizePoll(raw);
@@ -457,14 +480,19 @@
         if (doneEl) doneEl.textContent = String(sub);
         if (visitLine) visitLine.textContent = `Уникальных заходов по ссылке: ${vis}`;
 
+        const raffle = raw.raffleDraw;
+        const hasRaffle = raffle && Array.isArray(raffle.numbers) && raffle.numbers.length > 0;
+        const clearRaffleBtn = document.getElementById("adm-clear-raffle");
+        if (clearRaffleBtn) clearRaffleBtn.style.display = hasRaffle ? "inline-block" : "none";
+
         const st = document.getElementById("adm-status");
         if (st) {
           const closed = raw.sessionClosed === true;
           st.innerHTML = closed
-            ? `<span class="status closed">У участников на экране показываются итоги опроса</span>
-              <div style="margin-top:10px;font-size:0.9rem;color:var(--muted)">Чтобы снова показать вопросы, нажмите «Снова открыть опрос».</div>`
-            : `<span class="status open">У участников идёт опрос; итоги не показаны</span>
-              <div style="margin-top:10px;font-size:0.9rem;color:var(--muted)">В конце мероприятия нажмите «Показать результат участникам».</div>`;
+            ? `<span class="status closed">Итоги открыты на странице для большого экрана</span>
+              <div style="margin-top:10px;font-size:0.9rem;color:var(--muted)">На телефонах участников графики не показываются. Чтобы снова открыть опрос, нажмите «Снова открыть опрос».</div>`
+            : `<span class="status open">У участников идёт опрос; итоги на проекторе не показаны</span>
+              <div style="margin-top:10px;font-size:0.9rem;color:var(--muted)">В конце мероприятия откройте ссылку «экран для проектора» и нажмите «Показать результат на большом экране».</div>`;
         }
 
         let html = "";
@@ -493,6 +521,17 @@
           html += "</div>";
         });
         document.getElementById("adm-stats").innerHTML = html;
+
+        const wOut = document.getElementById("adm-winners-out");
+        if (hasRaffle && raffle.numbers) {
+          showRaffleMessage(
+            raffle.numbers,
+            typeof raffle.completedCount === "number" ? raffle.completedCount : sub,
+            typeof raffle.submissionCountSnapshot === "number" ? raffle.submissionCountSnapshot : sub
+          );
+        } else if (wOut) {
+          wOut.style.display = "none";
+        }
       }
 
       let editorDraft = [];
@@ -545,7 +584,7 @@
         if (editorDraft.length === 0) {
           editorDraft = OPK_poll.deepCloneQuestions();
           if (editorDraft.length === 0) {
-            editorDraft = [{ text: "Вопрос", options: ["Вариант 1", "Вариант 2"] }];
+            editorDraft = [{ text: "Вопрос", options: ["Вариант 1", "Вариант 2"], allowMultiple: true }];
           }
         }
         let html = "";
@@ -576,6 +615,10 @@
             </div>`;
           });
           html += `</div>
+            <label class="adm-multi-row" style="display:flex;align-items:center;gap:10px;margin:14px 0 4px;cursor:pointer;font-size:0.88rem;color:var(--text)">
+              <input type="checkbox" class="adm-multi" data-qi="${qi}" ${q.allowMultiple !== false ? "checked" : ""} />
+              <span>Несколько вариантов ответа</span>
+            </label>
             <button type="button" class="secondary adm-add-opt" data-qi="${qi}">+ Вариант ответа</button>
           </div>`;
         });
@@ -593,6 +636,12 @@
           }
           if (t.classList.contains("adm-inp-opt")) {
             editorDraft[+t.dataset.qi].options[+t.dataset.oi] = t.value;
+          }
+        });
+        wrap.addEventListener("change", (e) => {
+          const t = e.target;
+          if (t.classList.contains("adm-multi")) {
+            editorDraft[+t.dataset.qi].allowMultiple = t.checked;
           }
         });
         wrap.addEventListener("click", (e) => {
@@ -625,6 +674,7 @@
           editorDraft.push({
             text: "Новый вопрос",
             options: ["Вариант А", "Вариант Б"],
+            allowMultiple: true,
           });
           renderQuestionEditor();
         });
@@ -751,7 +801,12 @@
 
       document.getElementById("adm-show-result").addEventListener("click", async () => {
         if (!pollRef) return;
-        if (!confirm("Показать итоги опроса всем участникам на их экранах?")) return;
+        if (
+          !confirm(
+            "Показать итоги опроса на странице для большого экрана? На телефонах участников графики не отображаются."
+          )
+        )
+          return;
         await updateDoc(pollRef, { sessionClosed: true });
       });
 
@@ -761,22 +816,112 @@
         await updateDoc(pollRef, { sessionClosed: false });
       });
 
+      async function fetchParticipantNumbersFromSubmissions() {
+        const col = collection(db, POLL_DOC[0], POLL_DOC[1], "submissions");
+        const snap = await getDocs(col);
+        const nums = [];
+        snap.forEach((d) => {
+          const pn = d.data()?.participantNumber;
+          if (typeof pn === "number" && !Number.isNaN(pn)) nums.push(pn);
+        });
+        nums.sort((a, b) => a - b);
+        return nums;
+      }
+
+      function pickThreeUniqueFromPool(pool) {
+        if (!pool || pool.length === 0) return [];
+        const copy = [...pool];
+        const n = Math.min(3, copy.length);
+        const picked = [];
+        for (let i = 0; i < n; i++) {
+          const idx = Math.floor(Math.random() * copy.length);
+          picked.push(copy.splice(idx, 1)[0]);
+        }
+        return picked.sort((a, b) => a - b);
+      }
+
+      document.getElementById("adm-pick-winners").addEventListener("click", async () => {
+        const out = document.getElementById("adm-winners-out");
+        if (!pollRef || !db) return;
+        const btn = document.getElementById("adm-pick-winners");
+        btn.disabled = true;
+        try {
+          const pool = await fetchParticipantNumbersFromSubmissions();
+          if (pool.length < 1) {
+            out.style.display = "block";
+            out.textContent =
+              "Нет завершённых опросов с сохранённым номером участника. Дождитесь отправок анкет.";
+            return;
+          }
+          const nums = pickThreeUniqueFromPool(pool);
+          const pollSnap = await getDoc(pollRef);
+          const submissionCountSnapshot = pollSnap.exists() ? Number(pollSnap.data().submissionCount) || 0 : 0;
+          const completedCount = pool.length;
+          await updateDoc(pollRef, {
+            raffleDraw: {
+              numbers: nums,
+              completedCount,
+              submissionCountSnapshot,
+              at: Date.now(),
+            },
+          });
+        } catch (e) {
+          console.error(e);
+          out.style.display = "block";
+          out.textContent = "Не удалось сохранить розыгрыш: " + (e?.message || e);
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      document.getElementById("adm-clear-raffle").addEventListener("click", async () => {
+        if (!pollRef) return;
+        if (!confirm("Убрать три номера с экрана мероприятия (страница display)?")) return;
+        try {
+          await updateDoc(pollRef, { raffleDraw: deleteField() });
+          document.getElementById("adm-winners-out").style.display = "none";
+        } catch (e) {
+          console.error(e);
+          alert("Ошибка: " + (e?.message || e));
+        }
+      });
+
       document.getElementById("adm-reset").addEventListener("click", async () => {
         if (!pollRef || !db) return;
-        if (!confirm("Обнулить все ответы?")) return;
+        if (
+          !confirm(
+            "Сбросить счётчики и ответы участников? Тексты вопросов и приветствия сохранятся. Номера участников начнутся заново."
+          )
+        )
+          return;
         const btn = document.getElementById("adm-reset");
         btn.disabled = true;
         btn.textContent = "Сброс…";
         try {
           await deleteSubcollectionDocs("visitors");
           await deleteSubcollectionDocs("submissions");
-          await setDoc(pollRef, defaultPoll());
+          const snap = await getDoc(pollRef);
+          const cur = snap.exists() ? snap.data() : {};
+          const norm = OPK_poll.normalizePoll(cur);
+          const questions = norm.questions;
+          const welcome = norm.welcome;
+          const emptyTotals = OPK_poll.emptyTotalsForQuestions(questions);
+          await setDoc(pollRef, {
+            schemaVersion: 2,
+            questions,
+            welcome,
+            totals: emptyTotals,
+            submissionCount: 0,
+            visitorCount: 0,
+            sessionClosed: false,
+          });
+          document.getElementById("adm-winners-out").style.display = "none";
         } catch (e) {
           console.error(e);
           alert("Ошибка сброса: " + (e?.message || e));
         } finally {
           btn.disabled = false;
-          btn.textContent = "Сбросить всё";
+          btn.textContent = "Сбросить ответы и счётчики";
         }
       });
 

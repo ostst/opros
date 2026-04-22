@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
     <style>
@@ -94,34 +94,8 @@
         border-radius: 4px;
       }
       .layout {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(280px, 1fr);
-        gap: 24px;
-        align-items: start;
-      }
-      .layout--survey-only {
-        grid-template-columns: 1fr;
-      }
-      .live-col--hidden {
-        display: none !important;
-      }
-      @media (max-width: 960px) {
-        .layout:not(.layout--stats-only) {
-          grid-template-columns: 1fr;
-        }
-      }
-      .layout--stats-only {
-        grid-template-columns: 1fr;
-      }
-      .layout--stats-only .survey-col {
-        display: none;
-      }
-      /* Дубль: при открытых итогах колонка с «Начать опрос» не должна мелькать (десктоп / кэш). */
-      body.session-closed #survey-root {
-        display: none !important;
-      }
-      .layout--stats-only .live-col {
-        max-width: 900px;
+        display: block;
+        max-width: 640px;
         margin: 0 auto;
       }
       .survey-col {
@@ -130,28 +104,6 @@
         border-radius: var(--radius);
         padding: 22px 20px 24px;
         box-shadow: 0 4px 24px rgba(28, 31, 38, 0.06);
-      }
-      .live-col {
-        position: sticky;
-        top: 16px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 16px 16px 18px;
-        box-shadow: 0 4px 24px rgba(28, 31, 38, 0.06);
-        max-height: calc(100dvh - 48px);
-        overflow: auto;
-      }
-      @media (max-width: 960px) {
-        .live-col {
-          position: relative;
-          top: 0;
-          max-height: none;
-          order: 2;
-        }
-        .survey-col {
-          order: 1;
-        }
       }
       .live-title {
         margin: 0 0 12px;
@@ -319,6 +271,12 @@
         background: var(--navy);
         color: #fff;
       }
+      .question-hint {
+        font-size: 0.875rem;
+        color: var(--muted);
+        margin: -10px 0 16px;
+        line-height: 1.4;
+      }
       .option-text {
         font-size: 0.9375rem;
         color: #3a4150;
@@ -398,6 +356,55 @@
         margin-left: auto;
         margin-right: auto;
       }
+      .thanks-num-wrap {
+        margin: 24px auto 0;
+        padding: 20px 18px;
+        max-width: 20rem;
+        background: var(--navy-soft);
+        border: 1px solid rgba(43, 44, 132, 0.2);
+        border-radius: var(--radius-sm);
+      }
+      .thanks-num-label {
+        margin: 0 0 6px;
+        font-size: 0.8rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .thanks-num-value {
+        margin: 0;
+        padding: 8px 0 4px;
+        font-size: clamp(3.5rem, 14vw, 5.25rem);
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        font-variant-numeric: tabular-nums;
+        color: var(--navy);
+        line-height: 1;
+      }
+      .thanks-num-hint {
+        margin: 14px 0 0;
+        font-size: 0.9rem;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+      .session-closed-msg {
+        text-align: center;
+        padding: 32px 16px 24px;
+        max-width: 28rem;
+        margin: 0 auto;
+      }
+      .session-closed-msg h1 {
+        font-size: 1.2rem;
+        margin: 0 0 10px;
+        color: var(--navy);
+      }
+      .session-closed-msg p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
       .panel {
         display: flex;
         flex-direction: column;
@@ -436,6 +443,51 @@
       .welcome-actions .btn-primary {
         max-width: 240px;
       }
+      .winner-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      .winner-modal[hidden] {
+        display: none !important;
+      }
+      .winner-modal__backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(28, 31, 38, 0.55);
+        backdrop-filter: blur(4px);
+      }
+      .winner-modal__card {
+        position: relative;
+        z-index: 1;
+        max-width: 22rem;
+        width: 100%;
+        padding: 26px 22px 22px;
+        background: var(--surface);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        box-shadow: 0 20px 60px rgba(28, 31, 38, 0.2);
+        text-align: center;
+      }
+      .winner-modal__card h2 {
+        margin: 0 0 12px;
+        font-size: 1.35rem;
+        color: var(--navy);
+      }
+      .winner-modal__card p {
+        margin: 0 0 20px;
+        font-size: 0.95rem;
+        color: var(--text);
+        line-height: 1.5;
+      }
+      .winner-modal__card .btn-primary {
+        width: 100%;
+      }
     </style>
   </head>
   <body>
@@ -464,7 +516,7 @@
           color: #1e3a5f;
         "
       >
-        Сейчас для всех открыты <strong>итоги</strong> опроса.
+        Итоги опроса показаны <strong>на большом экране</strong> мероприятия (не на этом устройстве).
       </p>
 
       <div class="layout" id="layout">
@@ -473,11 +525,15 @@
             Загрузка опроса…
           </p>
         </div>
-        <aside class="live-col live-col--hidden" id="live-col">
-          <p class="live-title" id="live-title">Итоги опроса</p>
-          <p class="live-meta" id="live-meta"></p>
-          <div id="live-blocks"></div>
-        </aside>
+      </div>
+    </div>
+
+    <div id="winner-modal" class="winner-modal" hidden>
+      <div class="winner-modal__backdrop" aria-hidden="true"></div>
+      <div class="winner-modal__card" role="dialog" aria-modal="true" aria-labelledby="winner-modal-title">
+        <h2 id="winner-modal-title">Поздравляем!</h2>
+        <p id="winner-modal-text"></p>
+        <button type="button" class="btn-primary" id="winner-modal-close">Отлично</button>
       </div>
     </div>
 
@@ -559,10 +615,6 @@
       }
 
       const surveyRoot = document.getElementById("survey-root");
-      const liveTitle = document.getElementById("live-title");
-      const liveMeta = document.getElementById("live-meta");
-      const liveBlocks = document.getElementById("live-blocks");
-      const layout = document.getElementById("layout");
       const setupWarning = document.getElementById("setup-warning");
       const sessionBanner = document.getElementById("session-banner");
 
@@ -576,91 +628,64 @@
       let surveyStarted = false;
       let sending = false;
       let unsub = null;
+      /** Порядковый номер участника после отправки анкеты (для розыгрыша). */
+      let myParticipantNumber = null;
 
       function isSessionClosed() {
         return pollData.sessionClosed === true;
       }
 
-      function pctOption(row, oi, sum) {
-        const v = OPK_poll.getCount(row, oi);
-        if (sum <= 0) return 0;
-        return Math.round((v / sum) * 1000) / 10;
-      }
-
-      function renderLive(data) {
-        const closed = data && data.sessionClosed === true;
-        const norm = window.OPK_poll.normalizePoll(data || {});
-        const totals = norm.totals || {};
-        const questions = norm.questions || [];
-        if (liveTitle) liveTitle.textContent = closed ? "Итоги опроса" : "Статистика";
-        if (liveMeta) {
-          liveMeta.innerHTML = closed
-            ? `Распределение ответов по вопросам`
-            : "";
-        }
-
-        let html = "";
-        questions.forEach((q, qi) => {
-          const row = totals["q" + qi] || {};
-          const nOpt = (q.options || []).length;
-          const sum = OPK_poll.sumRow(row);
-          let maxP = 1;
-          for (let oi = 0; oi < nOpt; oi++) {
-            const p = pctOption(row, oi, sum);
-            if (p > maxP) maxP = p;
-          }
-          html += `<div class="mini-block"><p class="mini-q">${esc(q.text)}</p>`;
-          for (let oi = 0; oi < nOpt; oi++) {
-            const letter = OPK_poll.letterForIndex(oi);
-            const p = pctOption(row, oi, sum);
-            const w = maxP > 0 ? (p / maxP) * 100 : 0;
-            const short = OPK_poll.truncateLabel(q.options[oi], 42);
-            const cnt = OPK_poll.getCount(row, oi);
-            html += `<div class="mini-row">
-              <div class="mini-label"><strong>${esc(letter)}</strong> ${esc(short)}</div>
-              <div class="mini-track" aria-hidden="true"><div class="mini-fill" style="width:${w}%"></div></div>
-              <div><div class="mini-pct">${esc(String(p))}%</div><div class="mini-n">${esc(String(cnt))}</div></div>
-            </div>`;
-          }
-          html += "</div>";
-        });
-        liveBlocks.innerHTML = html;
-      }
-
-      /** До показа итогов — одна колонка с опросом; после «Показать результат» — скрываем опрос/спасибо, только блок с итогами. */
-      function applyLayout() {
+      function applySessionBanner() {
         const closed = isSessionClosed();
-        const liveEl = document.getElementById("live-col");
-        if (liveEl) {
-          liveEl.classList.toggle("live-col--hidden", !closed);
-          liveEl.classList.toggle("big-stats", closed);
-        }
-        layout.classList.toggle("layout--stats-only", closed);
-        layout.classList.toggle("layout--survey-only", !closed);
         document.body.classList.toggle("session-closed", closed);
         if (sessionBanner) sessionBanner.hidden = !closed;
-        /* Явно скрываем колонку опроса при итогах — иначе на десктопе иногда остаётся «Начать опрос» рядом с графиками. */
-        if (surveyRoot) {
-          surveyRoot.style.display = closed ? "none" : "";
-        }
+      }
+
+      function thanksHtml() {
+        const numStr =
+          typeof myParticipantNumber === "number" && !Number.isNaN(myParticipantNumber)
+            ? esc(String(myParticipantNumber))
+            : "—";
+        const numBlock =
+          typeof myParticipantNumber === "number" && !Number.isNaN(myParticipantNumber)
+            ? `<div class="thanks-num-wrap" role="status">
+              <p class="thanks-num-label">Ваш номер участника</p>
+              <p class="thanks-num-value">${numStr}</p>
+              <p class="thanks-num-hint">Сохраните или сфотографируйте номер — среди всех участников мы выберем трёх победителей для подарка.</p>
+            </div>`
+            : `<p class="thanks-sub">Номер участника не найден в данных — при розыгрыше ориентируйтесь на объявление ведущего.</p>`;
+        const afterLine = isSessionClosed()
+          ? `<p class="thanks-sub">Распределение ответов по вариантам — на большом экране мероприятия.</p>`
+          : "";
+        return (
+          `<div class="thanks">
+            <svg width="52" height="52" viewBox="0 0 56 56" fill="none" aria-hidden="true">
+              <circle cx="28" cy="28" r="26" stroke="currentColor" stroke-width="2" opacity="0.25"/>
+              <path d="M16 28.5l8.5 8.5L40 19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h1>Спасибо, что прошли опрос</h1>
+            ${numBlock}
+            ${afterLine}
+          </div>`
+        );
       }
 
       function renderSurvey() {
         const closed = isSessionClosed();
-        if (closed) {
-          surveyRoot.innerHTML = "";
+        if (closed && userDone) {
+          surveyRoot.innerHTML = thanksHtml();
+          return;
+        }
+        if (closed && !userDone) {
+          surveyRoot.innerHTML =
+            `<div class="session-closed-msg">
+              <h1>Итоги опроса на большом экране</h1>
+              <p>Графики и распределение ответов показываются только на экране мероприятия. Спасибо за участие!</p>
+            </div>`;
           return;
         }
         if (userDone) {
-          surveyRoot.innerHTML =
-            `<div class="thanks">
-              <svg width="52" height="52" viewBox="0 0 56 56" fill="none" aria-hidden="true">
-                <circle cx="28" cy="28" r="26" stroke="currentColor" stroke-width="2" opacity="0.25"/>
-                <path d="M16 28.5l8.5 8.5L40 19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <h1>Спасибо, что прошли опрос</h1>
-              <p class="thanks-sub">Результаты появятся после завершения сессии.</p>
-            </div>`;
+          surveyRoot.innerHTML = thanksHtml();
           return;
         }
         if (!surveyStarted) {
@@ -680,7 +705,7 @@
             surveyStarted = true;
             const qs = pollData.questions || [];
             answers.length = 0;
-            for (let i = 0; i < qs.length; i++) answers.push(undefined);
+            for (let i = 0; i < qs.length; i++) answers.push([]);
             step = 0;
             renderSurvey();
           });
@@ -693,17 +718,22 @@
           return;
         }
         const q = qs[step];
-        const sel = answers[step];
+        const multi = q.allowMultiple !== false;
+        const selArr = Array.isArray(answers[step]) ? answers[step] : [];
+        const selSet = new Set(selArr);
         const pct = ((step + 1) / qs.length) * 100;
         let opts = "";
         for (let j = 0; j < q.options.length; j++) {
           const letter = OPK_poll.letterForIndex(j);
-          const pressed = sel === j ? "true" : "false";
+          const pressed = selSet.has(j) ? "true" : "false";
           opts += `<li><button type="button" class="option" data-idx="${j}" aria-pressed="${pressed}">
             <span class="option-letter">${esc(letter)}</span>
             <span class="option-text">${esc(q.options[j])}</span>
           </button></li>`;
         }
+        const qHint = multi
+          ? "Можно отметить один или несколько подходящих вариантов."
+          : "Выберите один вариант ответа.";
         const backBtn =
           step > 0
             ? `<button type="button" class="btn-ghost" id="btn-back">Назад</button>`
@@ -717,6 +747,7 @@
           </div>
           <div class="panel">
             <h2 class="question-title">${esc(q.text)}</h2>
+            <p class="question-hint">${esc(qHint)}</p>
             <ul class="options" role="list">${opts}</ul>
             <p class="err" id="survey-err" hidden></p>
             <div class="actions">${backBtn}<button type="button" class="btn-primary" id="btn-next" disabled>${esc(nextLabel)}</button></div>
@@ -725,12 +756,21 @@
         surveyRoot.querySelectorAll(".option").forEach((btn) => {
           btn.addEventListener("click", () => {
             const idx = parseInt(btn.getAttribute("data-idx"), 10);
-            answers[step] = idx;
+            let arr = Array.isArray(answers[step]) ? [...answers[step]] : [];
+            if (multi) {
+              const pos = arr.indexOf(idx);
+              if (pos >= 0) arr.splice(pos, 1);
+              else arr.push(idx);
+              arr.sort((a, b) => a - b);
+            } else {
+              arr = [idx];
+            }
+            answers[step] = arr;
             surveyRoot.querySelectorAll(".option").forEach((b) => {
               const j = parseInt(b.getAttribute("data-idx"), 10);
-              b.setAttribute("aria-pressed", j === idx ? "true" : "false");
+              b.setAttribute("aria-pressed", arr.includes(j) ? "true" : "false");
             });
-            document.getElementById("btn-next").disabled = false;
+            document.getElementById("btn-next").disabled = arr.length === 0;
           });
         });
         const next = document.getElementById("btn-next");
@@ -740,8 +780,10 @@
             renderSurvey();
           });
         }
+        next.disabled = !selArr.length;
         next.addEventListener("click", () => {
-          if (answers[step] === undefined || answers[step] === null) return;
+          const cur = answers[step];
+          if (!Array.isArray(cur) || cur.length === 0) return;
           if (step < qs.length - 1) {
             step++;
             renderSurvey();
@@ -765,31 +807,47 @@
           const qs = pollData.questions || [];
           if (qs.length === 0) throw new Error("bad answers");
           for (let i = 0; i < qs.length; i++) {
-            const oi = answers[i];
-            if (typeof oi !== "number" || oi < 0 || oi >= qs[i].options.length) throw new Error("bad answers");
+            const sel = answers[i];
+            if (!Array.isArray(sel) || sel.length === 0) throw new Error("bad answers");
+            const seen = new Set();
+            for (const oi of sel) {
+              if (typeof oi !== "number" || oi < 0 || oi >= qs[i].options.length) throw new Error("bad answers");
+              if (seen.has(oi)) throw new Error("bad answers");
+              seen.add(oi);
+            }
+            if (!qs[i].allowMultiple && sel.length > 1) throw new Error("bad answers");
           }
           const uid = auth.currentUser.uid;
           const submissionRef = doc(db, POLL_DOC[0], POLL_DOC[1], "submissions", uid);
           const visitorRef = doc(db, POLL_DOC[0], POLL_DOC[1], "visitors", uid);
+          let assignedNumber = null;
           await runTransaction(db, async (transaction) => {
             const subSnap = await transaction.get(submissionRef);
             if (subSnap.exists()) {
               throw new Error("__already_submitted__");
             }
             const vSnap = await transaction.get(visitorRef);
-            await transaction.get(pollRef);
+            const pollSnap = await transaction.get(pollRef);
+            const subCount = pollSnap.exists() ? Number(pollSnap.data().submissionCount) || 0 : 0;
+            assignedNumber = subCount + 1;
+            if (!pollSnap.exists()) {
+              transaction.set(pollRef, defaultPoll());
+            }
             const updates = {};
             for (let i = 0; i < qs.length; i++) {
-              updates[`totals.q${i}.${answers[i]}`] = increment(1);
+              for (const oi of answers[i]) {
+                updates[`totals.q${i}.${oi}`] = increment(1);
+              }
             }
-            updates.submissionCount = increment(1);
+            updates.submissionCount = assignedNumber;
             if (!vSnap.exists()) {
               transaction.set(visitorRef, { v: 1 });
               updates.visitorCount = increment(1);
             }
-            transaction.set(submissionRef, { s: 1 });
+            transaction.set(submissionRef, { s: 1, participantNumber: assignedNumber });
             transaction.update(pollRef, updates);
           });
+          myParticipantNumber = assignedNumber;
           userDone = true;
           renderSurvey();
         } catch (e) {
@@ -798,6 +856,15 @@
           const msg = e && (e.message || String(e));
           if (msg && String(msg).includes("__already_submitted__")) {
             userDone = true;
+            try {
+              const uid = auth.currentUser.uid;
+              const submissionRef = doc(db, POLL_DOC[0], POLL_DOC[1], "submissions", uid);
+              const subSnap = await getDoc(submissionRef);
+              if (subSnap.exists()) {
+                const pn = subSnap.data()?.participantNumber;
+                if (typeof pn === "number") myParticipantNumber = pn;
+              }
+            } catch (_) {}
             renderSurvey();
             return;
           }
@@ -814,16 +881,61 @@
         sending = false;
       }
 
+      function maybeShowWinnerModal() {
+        const modal = document.getElementById("winner-modal");
+        const textEl = document.getElementById("winner-modal-text");
+        if (!modal) return;
+        const rd = pollData.raffleDraw;
+        if (
+          !userDone ||
+          typeof myParticipantNumber !== "number" ||
+          !rd ||
+          !Array.isArray(rd.numbers) ||
+          !rd.numbers.includes(myParticipantNumber)
+        ) {
+          modal.hidden = true;
+          return;
+        }
+        const drawId = String(rd.at ?? "");
+        if (sessionStorage.getItem("opk_raffle_ack") === drawId) {
+          modal.hidden = true;
+          return;
+        }
+        modal.hidden = false;
+        if (textEl) {
+          textEl.textContent =
+            `Ваш номер участника ${myParticipantNumber} выиграл в розыгрыше среди завершивших опрос. Подойдите на сцену за подарком.`;
+        }
+      }
+
+      function bindWinnerModalClose() {
+        const btn = document.getElementById("winner-modal-close");
+        if (!btn || btn.dataset.bound === "1") return;
+        btn.dataset.bound = "1";
+        btn.addEventListener("click", () => {
+          const rd = pollData.raffleDraw;
+          if (rd && rd.at != null) sessionStorage.setItem("opk_raffle_ack", String(rd.at));
+          const modal = document.getElementById("winner-modal");
+          if (modal) modal.hidden = true;
+        });
+      }
+
       function syncFromPoll(data) {
         const raw = data && typeof data === "object" ? data : {};
         pollData = window.OPK_poll.normalizePoll(raw);
         const n = pollData.questions.length;
-        while (answers.length < n) answers.push(undefined);
+        while (answers.length < n) answers.push([]);
         answers.length = n;
+        for (let i = 0; i < n; i++) {
+          if (!Array.isArray(answers[i])) {
+            const v = answers[i];
+            answers[i] = typeof v === "number" && !Number.isNaN(v) ? [v] : [];
+          }
+        }
         if (step >= n) step = Math.max(0, n - 1);
-        renderLive(pollData);
         renderSurvey();
-        applyLayout();
+        applySessionBanner();
+        maybeShowWinnerModal();
       }
 
       function showSetupMessage() {
@@ -832,8 +944,6 @@
           `<strong>Firebase не настроен.</strong> В консоли Firebase: включите <strong>Firestore</strong>, в Authentication → Sign-in method — <strong>Анонимный</strong>, ` +
           `в Authentication → Settings → <strong>Authorized domains</strong> добавьте домен хостинга (например <code>username.github.io</code> или свой сайт). ` +
           `Проверьте <code>assets/firebase-config.js</code>. В Rules нужны <code>visitors/{uid}</code> и <code>submissions/{uid}</code> — см. комментарий в том файле.`;
-        if (liveMeta) liveMeta.textContent = "";
-        liveBlocks.innerHTML = "";
       }
 
       /**
@@ -885,10 +995,35 @@
           const uid = auth.currentUser.uid;
           const submissionRef = doc(db, POLL_DOC[0], POLL_DOC[1], "submissions", uid);
           const alreadySubmitted = await getDoc(submissionRef);
-          if (alreadySubmitted.exists()) userDone = true;
+          if (alreadySubmitted.exists()) {
+            userDone = true;
+            const pn = alreadySubmitted.data()?.participantNumber;
+            if (typeof pn === "number") myParticipantNumber = pn;
+          }
 
           // Сначала показываем вопросы; учёт визита — отдельной транзакцией (не блокирует первый экран).
           syncFromPoll(snap.exists() ? snap.data() : defaultPoll());
+
+          onSnapshot(submissionRef, (subSnap) => {
+            if (subSnap.exists()) {
+              userDone = true;
+              const pn = subSnap.data()?.participantNumber;
+              if (typeof pn === "number") myParticipantNumber = pn;
+            } else if (userDone) {
+              /* Документ отправки удалили (сброс в админке) — снова показываем опрос. */
+              userDone = false;
+              myParticipantNumber = null;
+              surveyStarted = false;
+              step = 0;
+              const qs = pollData.questions || [];
+              answers.length = 0;
+              for (let i = 0; i < qs.length; i++) answers.push([]);
+            }
+            renderSurvey();
+            maybeShowWinnerModal();
+          });
+
+          bindWinnerModalClose();
 
           countVisitorOnce(auth).catch((e) => console.error("visitor count:", e));
 
@@ -900,7 +1035,6 @@
             },
             (err) => {
               console.error(err);
-              if (liveMeta) liveMeta.textContent = "Ошибка подписки на данные";
             }
           );
         } catch (e) {

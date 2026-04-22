@@ -5,7 +5,7 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if request.auth != null;
 
-      // create: own uid only; read+delete: any signed-in user (admin reset lists and deletes all)
+      // create: own uid only; read+delete: any signed-in user (сброс счётчиков в админке удаляет все записи)
       match /visitors/{visitorId} {
         allow create: if request.auth != null && request.auth.uid == visitorId;
         allow read, delete: if request.auth != null;

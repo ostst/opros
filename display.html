@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f0f2f6" />
+    <title>Результаты опроса — экран мероприятия</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f0f2f6;
+        --surface: #ffffff;
+        --border: #dde1ea;
+        --text: #1c1f26;
+        --muted: #5c6473;
+        --navy: #2b2c84;
+        --radius: 16px;
+        --font: "Manrope", system-ui, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.45;
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(ellipse 90% 60% at 50% -15%, rgba(43, 44, 132, 0.07), transparent 50%),
+          radial-gradient(ellipse 70% 40% at 100% 100%, rgba(234, 86, 20, 0.05), transparent 45%);
+        z-index: 0;
+      }
+      .shell {
+        position: relative;
+        z-index: 1;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 28px 24px 40px;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .brand-logo {
+        height: 40px;
+        width: auto;
+      }
+      .badge {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .badge.wait {
+        background: #fff8e6;
+        color: #5c4a1a;
+        border: 1px solid #f0d78c;
+      }
+      .badge.live {
+        background: #e3f2fd;
+        color: #0d47a1;
+        border: 1px solid #90caf9;
+      }
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 22px 20px 24px;
+        box-shadow: 0 4px 24px rgba(28, 31, 38, 0.06);
+      }
+      .live-title {
+        margin: 0 0 8px;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .live-meta {
+        font-size: 0.9rem;
+        color: var(--muted);
+        margin: 0 0 18px;
+      }
+      .mini-block {
+        margin-bottom: 20px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--border);
+      }
+      .mini-block:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+      }
+      .mini-q {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--navy);
+        margin: 0 0 12px;
+        line-height: 1.35;
+      }
+      .mini-row {
+        display: grid;
+        grid-template-columns: 1fr minmax(72px, 28%) auto;
+        gap: 8px 12px;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 0.85rem;
+      }
+      @media (max-width: 600px) {
+        .mini-row {
+          grid-template-columns: 1fr;
+        }
+      }
+      .mini-label {
+        color: #3a4150;
+        line-height: 1.35;
+      }
+      .mini-track {
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(43, 44, 132, 0.1);
+        overflow: hidden;
+      }
+      .mini-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--navy), #5a5cb8);
+        transition: width 0.35s ease;
+      }
+      .mini-pct {
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .mini-n {
+        font-size: 0.82rem;
+        color: var(--muted);
+        text-align: right;
+      }
+      .wait-msg {
+        margin: 0;
+        font-size: 1.05rem;
+        color: var(--text);
+      }
+      .hint {
+        margin-top: 16px;
+        font-size: 0.88rem;
+        color: var(--muted);
+      }
+      .setup-warning {
+        background: #fff8e6;
+        border: 1px solid #f0d78c;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        font-size: 0.9rem;
+        color: #5c4a1a;
+      }
+      .raffle-hero {
+        text-align: center;
+        padding: 28px 20px 32px;
+        margin: 0 0 24px;
+        background: linear-gradient(165deg, rgba(43, 44, 132, 0.09), rgba(234, 86, 20, 0.06));
+        border: 2px solid rgba(43, 44, 132, 0.2);
+        border-radius: var(--radius);
+      }
+      .raffle-kicker {
+        margin: 0 0 12px;
+        font-size: 0.72rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .raffle-nums {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px 28px;
+        margin: 0 0 16px;
+      }
+      .raffle-nums span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 5.5rem;
+        padding: 16px 20px;
+        font-size: clamp(2.5rem, 8vw, 4rem);
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        color: var(--navy);
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 8px 28px rgba(43, 44, 132, 0.15);
+      }
+      .raffle-phrase {
+        margin: 0;
+        font-size: 1.05rem;
+        color: var(--text);
+        line-height: 1.45;
+        max-width: 36em;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .raffle-meta {
+        margin: 10px 0 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div id="setup-warning" class="setup-warning" hidden></div>
+      <div class="top">
+        <a href="https://psb-academy.ru/" target="_blank" rel="noopener noreferrer">
+          <img class="brand-logo" src="assets/logo.svg" width="180" height="48" alt="Академия ПСБ" />
+        </a>
+        <span id="status-badge" class="badge wait">Ожидание</span>
+      </div>
+      <div class="panel" id="display-root">
+        <p style="margin: 0; color: var(--muted); text-align: center; padding: 40px 16px">Загрузка…</p>
+      </div>
+      <p class="hint">Эту страницу откройте только на экране мероприятия. Участники на телефонах графики не видят.</p>
+    </div>
+
+    <script src="assets/firebase-config.js"></script>
+    <script src="assets/poll-helpers.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js";
+      import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-auth.js";
+      import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js";
+
+      const FB = window.OPK_FIREBASE;
+      const FIREBASE_CONFIG = FB?.config;
+      const POLL_DOC = FB?.pollDoc ?? ["poll", "main"];
+
+      function defaultPoll() {
+        return window.OPK_poll.normalizePoll({});
+      }
+
+      function esc(s) {
+        const d = document.createElement("div");
+        d.textContent = s;
+        return d.innerHTML;
+      }
+
+      function pctOption(row, oi, sum) {
+        const v = OPK_poll.getCount(row, oi);
+        if (sum <= 0) return 0;
+        return Math.round((v / sum) * 1000) / 10;
+      }
+
+      const displayRoot = document.getElementById("display-root");
+      const statusBadge = document.getElementById("status-badge");
+      const setupWarning = document.getElementById("setup-warning");
+
+      function raffleBlock(raw) {
+        const r = raw && raw.raffleDraw;
+        if (!r || !Array.isArray(r.numbers) || r.numbers.length === 0) return "";
+        const nums = r.numbers.map((n) => `<span>${esc(String(n))}</span>`).join("");
+        const cc = typeof r.completedCount === "number" ? r.completedCount : r.numbers.length;
+        return `<div class="raffle-hero" role="region" aria-label="Розыгрыш">
+          <p class="raffle-kicker">Розыгрыш · три номера</p>
+          <p class="raffle-nums">${nums}</p>
+          <p class="raffle-phrase">Участники под этими номерами — прошу выйти на сцену за подарком.</p>
+          <p class="raffle-meta">Случайный выбор среди ${esc(String(cc))} человек, прошедших опрос (номера из базы отправок).</p>
+        </div>`;
+      }
+
+      function render(data) {
+        const raw = data || {};
+        const closed = raw.sessionClosed === true;
+        const norm = window.OPK_poll.normalizePoll(raw);
+        const totals = norm.totals || {};
+        const questions = norm.questions || [];
+        const hasRaffle = raw.raffleDraw && Array.isArray(raw.raffleDraw.numbers) && raw.raffleDraw.numbers.length > 0;
+
+        if (!closed) {
+          if (statusBadge) {
+            statusBadge.className = "badge wait";
+            statusBadge.textContent = hasRaffle ? "Розыгрыш" : "Ожидание";
+          }
+          let inner = "";
+          if (hasRaffle) inner += raffleBlock(raw);
+          inner += `<p class="wait-msg">Итоги опроса появятся здесь, когда организатор нажмёт «Показать результат на большом экране» в админке.</p>`;
+          displayRoot.innerHTML = inner;
+          return;
+        }
+
+        if (statusBadge) {
+          statusBadge.className = "badge live";
+          statusBadge.textContent = "Итоги опроса";
+        }
+
+        const sub = raw.submissionCount ?? 0;
+        let html = "";
+        if (hasRaffle) html += raffleBlock(raw);
+        html += `<p class="live-title">Результаты опроса</p>
+          <p class="live-meta">Завершили опрос: <strong>${esc(String(sub))}</strong></p>`;
+
+        questions.forEach((q, qi) => {
+          const row = totals["q" + qi] || {};
+          const nOpt = (q.options || []).length;
+          const sum = OPK_poll.sumRow(row);
+          let maxP = 1;
+          for (let oi = 0; oi < nOpt; oi++) {
+            const p = pctOption(row, oi, sum);
+            if (p > maxP) maxP = p;
+          }
+          html += `<div class="mini-block"><p class="mini-q">${esc(q.text)}</p>`;
+          for (let oi = 0; oi < nOpt; oi++) {
+            const letter = OPK_poll.letterForIndex(oi);
+            const p = pctOption(row, oi, sum);
+            const w = maxP > 0 ? (p / maxP) * 100 : 0;
+            const short = OPK_poll.truncateLabel(q.options[oi], 56);
+            const cnt = OPK_poll.getCount(row, oi);
+            html += `<div class="mini-row">
+              <div class="mini-label"><strong>${esc(letter)}</strong> ${esc(short)}</div>
+              <div class="mini-track" aria-hidden="true"><div class="mini-fill" style="width:${w}%"></div></div>
+              <div><div class="mini-pct">${esc(String(p))}%</div><div class="mini-n">${esc(String(cnt))}</div></div>
+            </div>`;
+          }
+          html += "</div>";
+        });
+        displayRoot.innerHTML = html;
+      }
+
+      function isConfigReady() {
+        const c = window.OPK_FIREBASE?.config;
+        return !!(c && c.apiKey && c.projectId);
+      }
+
+      async function init() {
+        if (!isConfigReady()) {
+          setupWarning.hidden = false;
+          setupWarning.innerHTML =
+            `<strong>Firebase не настроен.</strong> Проверьте <code>assets/firebase-config.js</code>.`;
+          displayRoot.innerHTML = `<p class="wait-msg">Нет подключения к данным.</p>`;
+          return;
+        }
+
+        const app = initializeApp(FIREBASE_CONFIG);
+        await signInAnonymously(getAuth(app));
+        const db = getFirestore(app);
+        const pollRef = doc(db, POLL_DOC[0], POLL_DOC[1]);
+
+        let snap = await getDoc(pollRef);
+        if (!snap.exists()) {
+          await setDoc(pollRef, defaultPoll());
+          snap = await getDoc(pollRef);
+        }
+        render(snap.exists() ? snap.data() : defaultPoll());
+
+        onSnapshot(
+          pollRef,
+          (docSnap) => {
+            if (docSnap.exists()) render(docSnap.data());
+            else render(defaultPoll());
+          },
+          (err) => {
+            console.error(err);
+            displayRoot.innerHTML = `<p class="wait-msg" style="color:#b42318">Ошибка подписки на данные.</p>`;
+          }
+        );
+      }
+
+      init();
+    </script>
+  </body>
+</html>

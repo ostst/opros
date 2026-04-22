@@ -53,7 +53,8 @@
       })
       .filter((s) => s.length > 0);
     if (!text || options.length < 2) return null;
-    return { text, options };
+    const allowMultiple = q.singleChoice === true ? false : q.allowMultiple !== false;
+    return { text, options, allowMultiple };
   }
 
   /**
@@ -90,7 +91,7 @@
         kicker: "Опрос · HR и ОПК",
         title: "Пульс HR-лидеров\nоборонной промышленности",
         lead:
-          "Анонимный опрос для участников мероприятия Академии ПСБ. Сейчас в анкете {{nq}} вопросов — у каждого нужно выбрать один вариант ответа.",
+          "Анонимный опрос для участников мероприятия Академии ПСБ. В анкете {{nq}} вопросов — у каждого можно выбрать один или несколько вариантов ответа.",
         closing: "Ваши ответы помогут сформировать повестку сообщества и увидеть общую картину по отрасли.",
       };
     }
@@ -156,7 +157,7 @@
     }
     const out = [];
     for (let i = 0; i < draft.length; i++) {
-      const nq = normalizeQuestion({ text: draft[i].text, options: draft[i].options });
+      const nq = normalizeQuestion(draft[i]);
       if (!nq) {
         throw new Error("Вопрос " + (i + 1) + ": укажите текст и не меньше двух вариантов ответа");
       }
