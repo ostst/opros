@@ -689,14 +689,11 @@
           return;
         }
         if (!surveyStarted) {
-          const nq = (pollData.questions || []).length;
           const w = pollData.welcome;
           surveyRoot.innerHTML =
             `<div class="welcome">
               <p class="kicker">${esc(w.kicker)}</p>
               <h1 class="welcome-title">${welcomeTitleHtml(w.title)}</h1>
-              <p class="welcome-desc">${welcomeLeadHtml(w.lead, nq)}</p>
-              <p class="welcome-desc">${esc(w.closing)}</p>
               <div class="welcome-actions">
                 <button type="button" class="btn-primary" id="btn-start">Начать опрос</button>
               </div>
