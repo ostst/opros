@@ -443,51 +443,6 @@
       .welcome-actions .btn-primary {
         max-width: 240px;
       }
-      .winner-modal {
-        position: fixed;
-        inset: 0;
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        box-sizing: border-box;
-      }
-      .winner-modal[hidden] {
-        display: none !important;
-      }
-      .winner-modal__backdrop {
-        position: absolute;
-        inset: 0;
-        background: rgba(28, 31, 38, 0.55);
-        backdrop-filter: blur(4px);
-      }
-      .winner-modal__card {
-        position: relative;
-        z-index: 1;
-        max-width: 22rem;
-        width: 100%;
-        padding: 26px 22px 22px;
-        background: var(--surface);
-        border-radius: var(--radius);
-        border: 1px solid var(--border);
-        box-shadow: 0 20px 60px rgba(28, 31, 38, 0.2);
-        text-align: center;
-      }
-      .winner-modal__card h2 {
-        margin: 0 0 12px;
-        font-size: 1.35rem;
-        color: var(--navy);
-      }
-      .winner-modal__card p {
-        margin: 0 0 20px;
-        font-size: 0.95rem;
-        color: var(--text);
-        line-height: 1.5;
-      }
-      .winner-modal__card .btn-primary {
-        width: 100%;
-      }
     </style>
   </head>
   <body>
@@ -525,15 +480,6 @@
             Загрузка опроса…
           </p>
         </div>
-      </div>
-    </div>
-
-    <div id="winner-modal" class="winner-modal" hidden>
-      <div class="winner-modal__backdrop" aria-hidden="true"></div>
-      <div class="winner-modal__card" role="dialog" aria-modal="true" aria-labelledby="winner-modal-title">
-        <h2 id="winner-modal-title">Поздравляем!</h2>
-        <p id="winner-modal-text"></p>
-        <button type="button" class="btn-primary" id="winner-modal-close">Отлично</button>
       </div>
     </div>
 
@@ -651,7 +597,7 @@
             ? `<div class="thanks-num-wrap" role="status">
               <p class="thanks-num-label">Ваш номер участника</p>
               <p class="thanks-num-value">${numStr}</p>
-              <p class="thanks-num-hint">Сохраните или сфотографируйте номер — среди всех участников мы выберем трёх победителей для подарка.</p>
+              <p class="thanks-num-hint">Из числа участников опроса будет выбрано 3 участника для награждения.</p>
             </div>`
             : `<p class="thanks-sub">Номер участника не найден в данных — при розыгрыше ориентируйтесь на объявление ведущего.</p>`;
         const afterLine = isSessionClosed()
@@ -878,45 +824,6 @@
         sending = false;
       }
 
-      function maybeShowWinnerModal() {
-        const modal = document.getElementById("winner-modal");
-        const textEl = document.getElementById("winner-modal-text");
-        if (!modal) return;
-        const rd = pollData.raffleDraw;
-        if (
-          !userDone ||
-          typeof myParticipantNumber !== "number" ||
-          !rd ||
-          !Array.isArray(rd.numbers) ||
-          !rd.numbers.includes(myParticipantNumber)
-        ) {
-          modal.hidden = true;
-          return;
-        }
-        const drawId = String(rd.at ?? "");
-        if (sessionStorage.getItem("opk_raffle_ack") === drawId) {
-          modal.hidden = true;
-          return;
-        }
-        modal.hidden = false;
-        if (textEl) {
-          textEl.textContent =
-            `Ваш номер участника ${myParticipantNumber} выиграл в розыгрыше среди завершивших опрос. Подойдите на сцену за подарком.`;
-        }
-      }
-
-      function bindWinnerModalClose() {
-        const btn = document.getElementById("winner-modal-close");
-        if (!btn || btn.dataset.bound === "1") return;
-        btn.dataset.bound = "1";
-        btn.addEventListener("click", () => {
-          const rd = pollData.raffleDraw;
-          if (rd && rd.at != null) sessionStorage.setItem("opk_raffle_ack", String(rd.at));
-          const modal = document.getElementById("winner-modal");
-          if (modal) modal.hidden = true;
-        });
-      }
-
       function syncFromPoll(data) {
         const raw = data && typeof data === "object" ? data : {};
         pollData = window.OPK_poll.normalizePoll(raw);
@@ -932,7 +839,6 @@
         if (step >= n) step = Math.max(0, n - 1);
         renderSurvey();
         applySessionBanner();
-        maybeShowWinnerModal();
       }
 
       function showSetupMessage() {
@@ -1017,10 +923,7 @@
               for (let i = 0; i < qs.length; i++) answers.push([]);
             }
             renderSurvey();
-            maybeShowWinnerModal();
           });
-
-          bindWinnerModalClose();
 
           countVisitorOnce(auth).catch((e) => console.error("visitor count:", e));
 
