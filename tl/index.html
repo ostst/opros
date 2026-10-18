@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f0f2f6" />
+    <title>Анкета участника — РАНХиГС × Академия ПСБ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/tl.css" />
+    <style>
+      .shell {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 760px;
+        margin: 0 auto;
+        padding: max(16px, env(safe-area-inset-top, 0px)) var(--gutter) calc(24px + var(--safe-bottom));
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+      }
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 4px 0 18px;
+      }
+      .card {
+        position: relative;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: clamp(20px, 4.5vw, 40px);
+        box-shadow: 0 4px 24px rgba(28, 31, 38, 0.06);
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+      }
+      @media (min-width: 640px) {
+        .card {
+          flex: 0 0 auto;
+        }
+      }
+      .screen {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        animation: in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .screen.back {
+        animation-name: in-back;
+      }
+      @keyframes in {
+        from {
+          opacity: 0;
+          transform: translateX(14px);
+        }
+      }
+      @keyframes in-back {
+        from {
+          opacity: 0;
+          transform: translateX(-14px);
+        }
+      }
+
+      /* Приветствие */
+      .welcome-title {
+        font-size: clamp(1.55rem, 4.6vw, 2.15rem);
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        margin: 0 0 16px;
+        color: var(--navy);
+        text-wrap: balance;
+      }
+      .welcome-lead {
+        font-size: clamp(0.95rem, 2.2vw, 1.05rem);
+        color: var(--muted);
+        margin: 0;
+        line-height: 1.6;
+        max-width: 36em;
+      }
+      .facts {
+        list-style: none;
+        margin: 26px 0 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .facts li {
+        background: var(--navy-soft);
+        border-radius: var(--radius-sm);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .facts b {
+        font-size: 1.15rem;
+        color: var(--navy);
+        font-variant-numeric: tabular-nums;
+      }
+      .facts span {
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      @media (max-width: 420px) {
+        .facts {
+          grid-template-columns: 1fr;
+        }
+        .facts li {
+          flex-direction: row;
+          align-items: baseline;
+          gap: 8px;
+        }
+      }
+      .welcome-actions {
+        margin-top: auto;
+        padding-top: 30px;
+      }
+      @media (min-width: 640px) {
+        .welcome-actions .btn {
+          min-width: 240px;
+        }
+      }
+
+      /* Прогресс */
+      .q-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .q-count {
+        font-size: 0.8125rem;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .q-count b {
+        color: var(--text);
+      }
+      .q-opt {
+        font-size: 0.75rem;
+        color: var(--muted);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        padding: 3px 9px;
+        border-radius: 999px;
+      }
+      .progress {
+        height: 6px;
+        border-radius: 999px;
+        background: rgba(43, 44, 132, 0.12);
+        overflow: hidden;
+        margin-bottom: clamp(20px, 3.5vw, 30px);
+      }
+      .progress i {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--navy), var(--navy-2));
+        transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      /* Вопрос */
+      .q-title {
+        font-size: clamp(1.1rem, 3.2vw, 1.4rem);
+        font-weight: 700;
+        line-height: 1.35;
+        margin: 0 0 8px;
+        text-wrap: pretty;
+      }
+      .q-hint {
+        font-size: 0.875rem;
+        color: var(--muted);
+        margin: 0 0 18px;
+        line-height: 1.45;
+      }
+      .options {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 10px;
+      }
+      @media (min-width: 640px) {
+        .options.cols-2 {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .option {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        text-align: left;
+        padding: 13px 16px;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--border);
+        background: var(--surface-2);
+        cursor: pointer;
+        min-height: 54px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, transform 0.12s ease;
+        -webkit-tap-highlight-color: transparent;
+      }
+      @media (hover: hover) {
+        .option:hover {
+          border-color: rgba(43, 44, 132, 0.35);
+          box-shadow: 0 4px 14px rgba(43, 44, 132, 0.08);
+        }
+      }
+      .option:active {
+        transform: scale(0.99);
+      }
+      .option[aria-checked="true"] {
+        border-color: var(--navy);
+        background: var(--navy-soft);
+        box-shadow: 0 0 0 1px rgba(43, 44, 132, 0.2);
+      }
+      .mark {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        display: grid;
+        place-items: center;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        background: rgba(43, 44, 132, 0.1);
+        color: var(--navy);
+        transition: background-color 0.2s ease, color 0.2s ease;
+      }
+      .option[aria-checked="true"] .mark {
+        background: var(--navy);
+        color: #fff;
+      }
+      .rank .option[aria-checked="true"] .mark {
+        background: var(--orange);
+      }
+      .option-text {
+        font-size: 0.9375rem;
+        color: var(--text-2);
+        line-height: 1.35;
+      }
+      .option[aria-checked="true"] .option-text {
+        color: var(--text);
+      }
+      .field {
+        width: 100%;
+        font: inherit;
+        font-size: 1rem;
+        color: var(--text);
+        background: var(--surface-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 14px 16px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        resize: vertical;
+      }
+      .field:focus {
+        outline: none;
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(43, 44, 132, 0.12);
+        background: #fff;
+      }
+      textarea.field {
+        min-height: 140px;
+        line-height: 1.5;
+      }
+      .other-wrap {
+        margin-top: 10px;
+        animation: in 0.25s ease;
+      }
+      .other-wrap textarea.field {
+        min-height: 76px;
+      }
+      .field-meta {
+        display: flex;
+        justify-content: flex-end;
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+      .rank-status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 12px;
+        font-size: 0.8125rem;
+        color: var(--muted);
+      }
+      .link-btn {
+        background: none;
+        border: 0;
+        padding: 6px 0;
+        color: var(--navy);
+        font-weight: 600;
+        font-size: 0.8125rem;
+        cursor: pointer;
+      }
+      .link-btn:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      /* Нижняя панель */
+      .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: auto;
+        padding-top: 26px;
+      }
+      .actions .btn-primary {
+        flex: 1;
+      }
+      @media (min-width: 640px) {
+        .actions {
+          justify-content: space-between;
+        }
+        .actions .btn-primary {
+          flex: 0 0 auto;
+          min-width: 200px;
+          margin-left: auto;
+        }
+      }
+      @media (max-width: 639px) {
+        .actions {
+          position: sticky;
+          bottom: 0;
+          margin: 0 calc(-1 * clamp(20px, 4.5vw, 40px)) calc(-1 * clamp(20px, 4.5vw, 40px));
+          padding: 14px clamp(20px, 4.5vw, 40px) calc(14px + var(--safe-bottom));
+          background: linear-gradient(to top, #fff 75%, rgba(255, 255, 255, 0));
+          border-radius: 0 0 var(--radius) var(--radius);
+        }
+        .actions .btn-ghost {
+          padding-inline: 16px;
+        }
+      }
+      .kbd-hint {
+        display: none;
+        font-size: 0.75rem;
+        color: var(--muted);
+        align-self: center;
+      }
+      @media (hover: hover) and (min-width: 900px) {
+        .kbd-hint {
+          display: block;
+        }
+      }
+
+      /* Финальные экраны */
+      .final {
+        text-align: center;
+        margin: auto;
+        padding: clamp(20px, 6vw, 48px) 0;
+        max-width: 30rem;
+      }
+      .final-icon {
+        width: 72px;
+        height: 72px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--navy-soft);
+        color: var(--navy);
+        animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      @keyframes pop {
+        from {
+          transform: scale(0.6);
+          opacity: 0;
+        }
+      }
+      .final h1 {
+        font-size: clamp(1.35rem, 4vw, 1.75rem);
+        margin: 0 0 10px;
+        color: var(--navy);
+        line-height: 1.25;
+      }
+      .final p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 1rem;
+        line-height: 1.55;
+      }
+      .loading {
+        margin: auto;
+        text-align: center;
+        color: var(--muted);
+        padding: 40px 0;
+      }
+      .spinner {
+        width: 28px;
+        height: 28px;
+        margin: 0 auto 12px;
+        border-radius: 50%;
+        border: 3px solid var(--navy-line);
+        border-top-color: var(--navy);
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .foot {
+        text-align: center;
+        font-size: 0.75rem;
+        color: var(--muted);
+        padding-top: 16px;
+      }
+      .demo-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #5c4a1a;
+        background: #fff8e6;
+        border: 1px solid #f0d78c;
+        border-radius: 999px;
+        padding: 3px 9px;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <a href="https://www.ranepa.ru/" target="_blank" rel="noopener"><img class="logo-ranepa" src="assets/logo-ranepa.png" width="114" height="50" alt="Президентская академия (РАНХиГС)" /></a>
+          <span class="brand-sep" aria-hidden="true"></span>
+          <a href="https://psb-academy.ru/" target="_blank" rel="noopener"><img src="assets/logo-psb.svg" width="133" height="36" alt="Академия ПСБ" /></a>
+        </div>
+        <span id="demo-badge" class="demo-badge" hidden>Демо</span>
+      </header>
+
+      <main class="card" id="root" aria-live="polite">
+        <div class="loading"><div class="spinner"></div>Загрузка анкеты…</div>
+      </main>
+      <p class="foot">Анкета анонимна. Ответы используются только для разработки программы.</p>
+    </div>
+
+    <script src="../assets/firebase-config.js"></script>
+    <script src="assets/tl-questions.js"></script>
+    <script type="module">
+      import { QUESTIONS, store, isDemo, esc, plural, isAnswered, cleanAnswers } from "./assets/tl-core.js";
+
+      const S = window.TL_SURVEY;
+      const root = document.getElementById("root");
+      const LETTERS = "АБВГДЕЖЗИКЛМНОПРСТУФХЦЧШЭЮЯ";
+      const DRAFT_KEY = "tl-draft-" + S.pollDoc.join("-");
+
+      let poll = null;
+      let mine = null;
+      let started = false;
+      let step = 0;
+      let dir = 1;
+      let sending = false;
+      let answers = {};
+
+      try {
+        const d = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || "null");
+        if (d && d.answers) {
+          answers = d.answers;
+          step = Math.min(d.step || 0, QUESTIONS.length - 1);
+          started = !!d.started;
+        }
+      } catch (_) {}
+
+      function saveDraft() {
+        try {
+          sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ answers, step, started }));
+        } catch (_) {}
+      }
+      function clearDraft() {
+        try {
+          sessionStorage.removeItem(DRAFT_KEY);
+        } catch (_) {}
+      }
+
+      const ICON_CHECK = `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      const ICON_LOCK = `<svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M8.5 10.5V8a3.5 3.5 0 017 0v2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+      const ICON_ARROW = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      const ICON_BACK = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+      function render() {
+        if (!poll) return;
+        if (mine) return renderFinal("done");
+        if (poll.status === "closed") return renderFinal("closed");
+        if (!started) return renderWelcome();
+        renderQuestion();
+      }
+
+      function renderFinal(kind) {
+        const done = kind === "done";
+        root.innerHTML = `<div class="screen"><div class="final">
+          <div class="final-icon">${done ? ICON_CHECK : ICON_LOCK}</div>
+          <h1>${done ? "Спасибо, ответы отправлены" : "Приём ответов завершён"}</h1>
+          <p>${
+            done
+              ? "Ваше мнение поможет сделать программу точнее. Общие результаты опроса покажем на экране мероприятия."
+              : "Спасибо за интерес к программе. Общие результаты опроса — на экране мероприятия."
+          }</p>
+        </div></div>`;
+      }
+
+      function renderWelcome() {
+        const w = S.welcome;
+        const n = QUESTIONS.length;
+        root.innerHTML = `<div class="screen">
+          <p class="kicker">${esc(w.kicker)}</p>
+          <h1 class="welcome-title">${esc(w.title)}</h1>
+          <p class="welcome-lead">${esc(w.lead)}</p>
+          <ul class="facts">
+            <li><b>${n}</b><span>${plural(n, "вопрос", "вопроса", "вопросов")}</span></li>
+            <li><b>~5 мин</b><span>на заполнение</span></li>
+            <li><b>Анонимно</b><span>без имени и контактов</span></li>
+          </ul>
+          <div class="welcome-actions">
+            <button type="button" class="btn btn-primary" id="start" style="width:100%;max-width:100%">Начать опрос ${ICON_ARROW}</button>
+          </div>
+        </div>`;
+        const b = document.getElementById("start");
+        if (window.matchMedia("(min-width:640px)").matches) b.style.width = "auto";
+        b.addEventListener("click", () => {
+          started = true;
+          step = 0;
+          dir = 1;
+          saveDraft();
+          render();
+        });
+      }
+
+      function optionList(q, a) {
+        const sel = new Set((a && a.sel) || []);
+        const multi = q.type === "multi";
+        const items = q.options.map((t, i) => ({ t, i }));
+        if (q.other) items.push({ t: q.otherLabel || "Другое", i: -1 });
+        const long = items.some((x) => x.t.length > 34);
+        const cols = !long && items.length >= 4 ? " cols-2" : "";
+        const lis = items
+          .map(
+            (x, k) => `<li><button type="button" class="option" role="${multi ? "checkbox" : "radio"}" data-i="${x.i}" aria-checked="${sel.has(x.i)}">
+              <span class="mark" aria-hidden="true">${LETTERS[k] || k + 1}</span><span class="option-text">${esc(x.t)}</span></button></li>`
+          )
+          .join("");
+        const other = sel.has(-1)
+          ? `<div class="other-wrap"><textarea class="field" id="other" rows="2" maxlength="500" placeholder="Напишите свой вариант">${esc(a.other || "")}</textarea></div>`
+          : "";
+        return `<ul class="options${cols}" role="${multi ? "group" : "radiogroup"}" aria-labelledby="q-title">${lis}</ul>${other}`;
+      }
+
+      function rankList(q, a) {
+        const order = Array.isArray(a) ? a : [];
+        const lis = q.options
+          .map((t, i) => {
+            const pos = order.indexOf(i);
+            const on = pos >= 0;
+            return `<li><button type="button" class="option" data-i="${i}" aria-checked="${on}" aria-label="${esc(t)}${on ? `, место ${pos + 1}` : ""}">
+              <span class="mark" aria-hidden="true">${on ? pos + 1 : "·"}</span><span class="option-text">${esc(t)}</span></button></li>`;
+          })
+          .join("");
+        const need = Math.min(q.minRank || q.options.length, q.options.length);
+        const left = Math.max(0, need - order.length);
+        const status =
+          left > 0
+            ? `Отметьте ещё ${left} ${plural(left, "вариант", "варианта", "вариантов")}`
+            : order.length < q.options.length
+              ? `Готово. Можно расставить и остальные`
+              : `Все варианты расставлены`;
+        return `<ul class="options rank" role="group" aria-labelledby="q-title">${lis}</ul>
+          <div class="rank-status"><span id="rank-status">${status}</span><button type="button" class="link-btn" id="rank-reset" ${order.length ? "" : "disabled"}>Сбросить</button></div>`;
+      }
+
+      function renderQuestion() {
+        const q = QUESTIONS[step];
+        const a = answers[q.id];
+        const n = QUESTIONS.length;
+        const last = step === n - 1;
+        let body = "";
+        let hint = q.hint || "";
+        if (q.type === "text") {
+          body = `<input class="field" id="txt" type="text" maxlength="300" autocomplete="organization-title" placeholder="${esc(q.placeholder || "")}" value="${esc(a || "")}" />`;
+        } else if (q.type === "long") {
+          body = `<textarea class="field" id="txt" maxlength="2000" placeholder="${esc(q.placeholder || "")}">${esc(a || "")}</textarea>
+            <div class="field-meta"><span id="cnt">${String(a || "").length} / 2000</span></div>`;
+        } else if (q.type === "rank") {
+          body = rankList(q, a);
+        } else {
+          if (!hint) hint = q.type === "multi" ? "Можно выбрать несколько вариантов." : "Выберите один вариант.";
+          body = optionList(q, a);
+        }
+        const ok = isAnswered(q, a);
+        const optional = q.required === false;
+        const nextLabel = last ? "Отправить" : optional && !ok ? "Пропустить" : "Далее";
+        root.innerHTML = `<div class="screen${dir < 0 ? " back" : ""}">
+          <div class="q-head">
+            <span class="q-count">Вопрос <b>${step + 1}</b> из ${n}</span>
+            ${optional ? `<span class="q-opt">Необязательный</span>` : ""}
+          </div>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${step}"><i style="width:${(step / n) * 100}%"></i></div>
+          <h2 class="q-title" id="q-title">${esc(q.title)}</h2>
+          ${hint ? `<p class="q-hint">${esc(hint)}</p>` : `<div style="height:10px"></div>`}
+          ${body}
+          <p class="err" id="err" hidden></p>
+          <div class="actions">
+            ${step > 0 ? `<button type="button" class="btn btn-ghost" id="back" aria-label="Назад">${ICON_BACK}<span class="back-l">Назад</span></button>` : ""}
+            <span class="kbd-hint">${q.type === "long" ? "Ctrl + Enter — далее" : "Enter — далее"}</span>
+            <button type="button" class="btn btn-primary" id="next" ${ok || optional ? "" : "disabled"}>${nextLabel}${last ? "" : " " + ICON_ARROW}</button>
+          </div>
+        </div>`;
+        requestAnimationFrame(() => {
+          const bar = root.querySelector(".progress i");
+          if (bar) bar.style.width = `${((step + (ok ? 1 : 0)) / n) * 100}%`;
+        });
+        bindQuestion(q);
+      }
+
+      function refreshNext(q) {
+        const a = answers[q.id];
+        const ok = isAnswered(q, a);
+        const optional = q.required === false;
+        const last = step === QUESTIONS.length - 1;
+        const next = document.getElementById("next");
+        next.disabled = !(ok || optional);
+        next.innerHTML = (last ? "Отправить" : optional && !ok ? "Пропустить" : "Далее") + (last ? "" : " " + ICON_ARROW);
+        const bar = root.querySelector(".progress i");
+        if (bar) bar.style.width = `${((step + (ok ? 1 : 0)) / QUESTIONS.length) * 100}%`;
+        saveDraft();
+      }
+
+      function go(delta) {
+        dir = delta;
+        step = Math.max(0, Math.min(QUESTIONS.length - 1, step + delta));
+        saveDraft();
+        render();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function goNext() {
+        const q = QUESTIONS[step];
+        const ok = isAnswered(q, answers[q.id]);
+        if (!ok && q.required !== false) return;
+        if (step === QUESTIONS.length - 1) return submit();
+        go(1);
+      }
+
+      function bindQuestion(q) {
+        const next = document.getElementById("next");
+        next.addEventListener("click", goNext);
+        const back = document.getElementById("back");
+        if (back) back.addEventListener("click", () => go(-1));
+
+        if (q.type === "text" || q.type === "long") {
+          const f = document.getElementById("txt");
+          const cnt = document.getElementById("cnt");
+          f.addEventListener("input", () => {
+            answers[q.id] = f.value;
+            if (cnt) cnt.textContent = `${f.value.length} / 2000`;
+            refreshNext(q);
+          });
+          f.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && (q.type === "text" || e.ctrlKey || e.metaKey)) {
+              e.preventDefault();
+              goNext();
+            }
+          });
+          if (window.matchMedia("(hover: hover)").matches) f.focus({ preventScroll: true });
+          return;
+        }
+
+        if (q.type === "rank") {
+          root.querySelectorAll(".option").forEach((b) => {
+            b.addEventListener("click", () => {
+              const i = +b.dataset.i;
+              let order = Array.isArray(answers[q.id]) ? [...answers[q.id]] : [];
+              const pos = order.indexOf(i);
+              if (pos >= 0) order.splice(pos, 1);
+              else order.push(i);
+              answers[q.id] = order;
+              const scroll = window.scrollY;
+              renderQuestionKeep();
+              window.scrollTo(0, scroll);
+            });
+          });
+          document.getElementById("rank-reset").addEventListener("click", () => {
+            answers[q.id] = [];
+            renderQuestionKeep();
+          });
+          return;
+        }
+
+        const multi = q.type === "multi";
+        root.querySelectorAll(".option").forEach((b) => {
+          b.addEventListener("click", () => {
+            const i = +b.dataset.i;
+            const cur = answers[q.id] || { sel: [] };
+            let sel = [...(cur.sel || [])];
+            if (multi) {
+              const p = sel.indexOf(i);
+              if (p >= 0) sel.splice(p, 1);
+              else sel.push(i);
+            } else sel = [i];
+            answers[q.id] = { ...cur, sel };
+            const hadOther = !!document.getElementById("other");
+            const hasOther = sel.includes(-1);
+            if (hadOther !== hasOther) {
+              const scroll = window.scrollY;
+              renderQuestionKeep();
+              window.scrollTo(0, scroll);
+              if (hasOther) document.getElementById("other").focus();
+              return;
+            }
+            root.querySelectorAll(".option").forEach((o) => o.setAttribute("aria-checked", String(sel.includes(+o.dataset.i))));
+            refreshNext(q);
+            // Один вариант без поля «Другое» — переходим дальше сами
+            if (!multi && i !== -1 && step < QUESTIONS.length - 1) {
+              clearTimeout(window.__adv);
+              window.__adv = setTimeout(() => {
+                if (QUESTIONS[step] === q) go(1);
+              }, 320);
+            }
+          });
+        });
+        const other = document.getElementById("other");
+        if (other) {
+          other.addEventListener("input", () => {
+            answers[q.id] = { ...(answers[q.id] || { sel: [-1] }), other: other.value };
+            refreshNext(q);
+          });
+          other.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              goNext();
+            }
+          });
+        }
+      }
+
+      function renderQuestionKeep() {
+        const d = dir;
+        dir = 0;
+        renderQuestion();
+        root.querySelector(".screen").style.animation = "none";
+        dir = d;
+      }
+
+      async function submit() {
+        if (sending) return;
+        sending = true;
+        const next = document.getElementById("next");
+        const err = document.getElementById("err");
+        next.disabled = true;
+        next.textContent = "Отправка…";
+        err.hidden = true;
+        try {
+          const missing = QUESTIONS.findIndex((q) => q.required !== false && !isAnswered(q, answers[q.id]));
+          if (missing >= 0) {
+            sending = false;
+            step = missing;
+            dir = -1;
+            render();
+            const e2 = document.getElementById("err");
+            e2.textContent = "Ответьте, пожалуйста, на этот вопрос.";
+            e2.hidden = false;
+            return;
+          }
+          await store.submit(cleanAnswers(answers));
+          mine = { t: Date.now() };
+          clearDraft();
+          render();
+        } catch (e) {
+          console.error(e);
+          if (String(e && e.message).includes("__already__")) {
+            mine = { t: Date.now() };
+            clearDraft();
+            render();
+          } else {
+            next.disabled = false;
+            next.textContent = "Отправить";
+            err.textContent = "Не удалось отправить ответы. Проверьте интернет и попробуйте ещё раз.";
+            err.hidden = false;
+          }
+        }
+        sending = false;
+      }
+
+      async function init() {
+        if (isDemo) document.getElementById("demo-badge").hidden = false;
+        try {
+          await store.init();
+          mine = await store.getMine();
+          store.onPoll((p) => {
+            const changed = !poll || poll.status !== p.status;
+            poll = p;
+            if (changed || !started) render();
+          });
+          store.onMine((m) => {
+            const had = !!mine;
+            mine = m;
+            if (had && !m) {
+              // ответы сброшены в админке — можно пройти заново
+              started = false;
+              answers = {};
+              step = 0;
+              render();
+            } else if (!had && m) render();
+          });
+          store.trackVisit();
+        } catch (e) {
+          console.error(e);
+          root.innerHTML = `<div class="screen"><div class="final">
+            <div class="final-icon">${ICON_LOCK}</div>
+            <h1>Не удалось подключиться</h1>
+            <p>Проверьте интернет и обновите страницу.</p>
+            <p class="err" style="margin-top:14px">${esc((e && (e.code || e.message)) || e)}</p>
+          </div></div>`;
+        }
+      }
+      init();
+    </script>
+  </body>
+</html>

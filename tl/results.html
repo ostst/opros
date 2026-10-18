@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f0f2f6" />
+    <title>Результаты опроса — экран мероприятия</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/tl.css" />
+    <style>
+      html {
+        font-size: clamp(15px, 0.62rem + 0.45vw, 28px);
+      }
+      .shell {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 2400px;
+        margin: 0 auto;
+        padding: clamp(16px, 2vw, 48px) clamp(16px, 2.6vw, 64px) clamp(24px, 3vw, 64px);
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px 24px;
+        flex-wrap: wrap;
+        margin-bottom: clamp(18px, 2.2vw, 40px);
+      }
+      .top .brand {
+        --logo-h: clamp(30px, 2.6vw, 64px);
+      }
+      .top-right {
+        display: flex;
+        align-items: center;
+        gap: clamp(12px, 1.4vw, 28px);
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0.45em 0.95em;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .pill i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22a06b;
+        box-shadow: 0 0 0 0 rgba(34, 160, 107, 0.5);
+        animation: pulse 1.8s infinite;
+      }
+      .pill.off i {
+        background: var(--muted);
+        animation: none;
+      }
+      @keyframes pulse {
+        70% {
+          box-shadow: 0 0 0 8px rgba(34, 160, 107, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(34, 160, 107, 0);
+        }
+      }
+
+      /* Ожидание: QR и счётчик */
+      .wait {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+        gap: clamp(20px, 3vw, 64px);
+        align-items: center;
+        min-height: calc(100dvh - 180px);
+      }
+      @media (max-width: 860px) {
+        .wait {
+          grid-template-columns: 1fr;
+          min-height: 0;
+        }
+      }
+      .wait h1 {
+        margin: 0 0 0.5em;
+        font-size: clamp(1.9rem, 3.6vw, 4.4rem);
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        color: var(--navy);
+        text-wrap: balance;
+      }
+      .wait .lead {
+        margin: 0;
+        font-size: clamp(1rem, 1.5vw, 1.6rem);
+        color: var(--muted);
+        max-width: 30em;
+        line-height: 1.5;
+      }
+      .counter {
+        margin-top: clamp(24px, 3vw, 56px);
+        display: flex;
+        align-items: baseline;
+        gap: 0.4em;
+        flex-wrap: wrap;
+      }
+      .counter b {
+        font-size: clamp(3rem, 7vw, 9rem);
+        font-weight: 800;
+        line-height: 1;
+        color: var(--navy);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.03em;
+      }
+      .counter span {
+        font-size: clamp(1rem, 1.4vw, 1.6rem);
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .qr-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: calc(var(--radius) * 1.5);
+        padding: clamp(18px, 2.2vw, 44px);
+        box-shadow: 0 12px 48px rgba(28, 31, 38, 0.08);
+        text-align: center;
+        max-width: 560px;
+        width: 100%;
+        justify-self: center;
+      }
+      .qr-box {
+        aspect-ratio: 1;
+        width: 100%;
+        max-width: min(440px, 60vh);
+        margin: 0 auto;
+      }
+      .qr-box svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .qr-card p {
+        margin: 1em 0 0;
+        font-size: clamp(1rem, 1.3vw, 1.5rem);
+        font-weight: 700;
+        color: var(--text);
+      }
+      .qr-card small {
+        display: block;
+        margin-top: 0.4em;
+        color: var(--muted);
+        font-size: 0.8rem;
+        word-break: break-all;
+      }
+
+      /* Результаты */
+      .res-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px 32px;
+        flex-wrap: wrap;
+        margin-bottom: clamp(16px, 1.8vw, 32px);
+      }
+      .res-head h1 {
+        margin: 0;
+        font-size: clamp(1.4rem, 2.2vw, 2.8rem);
+        line-height: 1.15;
+        color: var(--navy);
+        letter-spacing: -0.01em;
+      }
+      .res-head .kicker {
+        margin-bottom: 8px;
+      }
+      .res-stats {
+        display: flex;
+        gap: clamp(16px, 2vw, 40px);
+        align-items: center;
+      }
+      .stat b {
+        display: block;
+        font-size: clamp(1.8rem, 2.8vw, 3.6rem);
+        font-weight: 800;
+        line-height: 1;
+        color: var(--navy);
+        font-variant-numeric: tabular-nums;
+      }
+      .stat span {
+        font-size: 0.8rem;
+        color: var(--muted);
+        font-weight: 600;
+      }
+      .mini-qr {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 8px 14px 8px 8px;
+      }
+      .mini-qr .qr-box {
+        width: clamp(64px, 5.5vw, 130px);
+      }
+      .mini-qr span {
+        font-size: 0.78rem;
+        color: var(--muted);
+        max-width: 9em;
+        line-height: 1.3;
+      }
+      @media (max-width: 700px) {
+        .mini-qr {
+          display: none;
+        }
+      }
+      .r-grid {
+        --r-colw: 400px;
+        --r-cols: 4;
+        --r-gap: clamp(14px, 1.2vw, 28px);
+      }
+      .hint {
+        margin-top: 12px;
+        font-size: 0.78rem;
+        color: var(--muted);
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="top">
+        <div class="brand">
+          <img class="logo-ranepa" src="assets/logo-ranepa.png" width="114" height="50" alt="Президентская академия (РАНХиГС)" />
+          <span class="brand-sep" aria-hidden="true"></span>
+          <img src="assets/logo-psb.svg" width="133" height="36" alt="Академия ПСБ" />
+        </div>
+        <div class="top-right">
+          <span class="pill off" id="pill"><i></i><span>Подключение…</span></span>
+        </div>
+      </header>
+      <main id="root"></main>
+      <p class="hint" id="hint" hidden>Демо-режим: данные хранятся только в этом браузере.</p>
+    </div>
+
+    <script src="assets/qrcode.js"></script>
+    <script src="../assets/firebase-config.js"></script>
+    <script src="assets/tl-questions.js"></script>
+    <script src="assets/tl-core.js"></script>
+    <script src="assets/tl-render.js"></script>
+    <script>
+      (function () {
+      const { store, isDemo, aggregate, esc, plural, surveyUrl, withTimeout, isLocalFile } = window.TL;
+      const { resultsHtml, RESULTS_CSS } = window.TLRender;
+
+      const st = document.createElement("style");
+      st.textContent = RESULTS_CSS;
+      document.head.appendChild(st);
+
+      const S = window.TL_SURVEY;
+      const root = document.getElementById("root");
+      const pill = document.getElementById("pill");
+      let poll = null;
+      let subs = [];
+      let mode = null;
+
+      function qrSvg(text) {
+        if (typeof qrcode !== "function") return `<div class="notice">QR-код не загрузился. Ссылка: ${esc(text)}</div>`;
+        const qr = qrcode(0, "M");
+        qr.addData(text);
+        qr.make();
+        const n = qr.getModuleCount();
+        let d = "";
+        for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c} ${r}h1v1h-1z`;
+        return `<svg viewBox="-2 -2 ${n + 4} ${n + 4}" shape-rendering="crispEdges" role="img" aria-label="QR-код анкеты"><rect x="-2" y="-2" width="${n + 4}" height="${n + 4}" fill="#fff"/><path d="${d}" fill="#1c1f26"/></svg>`;
+      }
+
+      const url = surveyUrl();
+
+      function renderWait() {
+        const n = poll.submissionCount || 0;
+        const open = poll.status !== "closed";
+        root.innerHTML = `<section class="wait">
+          <div>
+            <p class="kicker">${esc(S.welcome.kicker)}</p>
+            <h1>${esc(S.welcome.title)}</h1>
+            <p class="lead">${open ? "Отсканируйте QR-код камерой телефона и ответьте на несколько вопросов. Это займёт около 5 минут." : "Приём ответов завершён. Спасибо всем, кто принял участие!"}</p>
+            <div class="counter"><b id="cnt">${n}</b><span>${plural(n, "участник прошёл опрос", "участника прошли опрос", "участников прошли опрос")}</span></div>
+          </div>
+          ${open ? `<div class="qr-card"><div class="qr-box">${qrSvg(url)}</div><p>Наведите камеру телефона</p><small>${esc(url.replace(/^https?:\/\//, ""))}</small></div>` : ""}
+        </section>`;
+      }
+
+      function renderResults() {
+        const n = subs.length;
+        const open = poll.status !== "closed";
+        const agg = aggregate(subs);
+        const html = `<section>
+          <div class="res-head">
+            <div><p class="kicker">Результаты опроса</p><h1>${esc(S.welcome.title)}</h1></div>
+            <div class="res-stats">
+              <div class="stat"><b>${n}</b><span>${plural(n, "участник", "участника", "участников")}</span></div>
+              ${open ? `<div class="mini-qr"><div class="qr-box">${qrSvg(url)}</div><span>Ещё не прошли? Сканируйте</span></div>` : ""}
+            </div>
+          </div>
+          <div class="r-grid">${resultsHtml(agg, { quoteLimit: 4 })}</div>
+        </section>`;
+        // Сохраняем ширины полос для плавной анимации
+        root.innerHTML = html;
+      }
+
+      function render() {
+        if (!poll) return;
+        const open = poll.status !== "closed";
+        pill.className = "pill" + (open ? "" : " off");
+        pill.querySelector("span").textContent = open ? "Приём ответов открыт" : "Приём ответов закрыт";
+        const m = poll.showResults ? "results" : "wait";
+        if (m !== mode) window.scrollTo(0, 0);
+        mode = m;
+        if (m === "results") renderResults();
+        else renderWait();
+      }
+
+      let pending = false;
+      function schedule() {
+        if (pending) return;
+        pending = true;
+        requestAnimationFrame(() => {
+          pending = false;
+          render();
+        });
+      }
+
+      /* Плавная автопрокрутка на большом экране, если результаты не помещаются */
+      let pauseUntil = Date.now() + 6000;
+      let dirDown = true;
+      ["wheel", "touchstart", "keydown", "mousedown"].forEach((e) =>
+        window.addEventListener(e, () => (pauseUntil = Date.now() + 60000), { passive: true })
+      );
+      let lastT = performance.now();
+      let acc = 0;
+      function tick(t) {
+        const dt = Math.min(100, t - lastT);
+        lastT = t;
+        const max = document.documentElement.scrollHeight - innerHeight;
+        if (mode === "results" && max > 40 && Date.now() > pauseUntil) {
+          if (dirDown) {
+            acc += (dt / 1000) * Math.max(28, innerHeight / 30);
+            const step = Math.floor(acc);
+            if (step) {
+              acc -= step;
+              window.scrollTo(0, Math.min(max, scrollY + step));
+            }
+            if (scrollY >= max - 1) {
+              dirDown = false;
+              pauseUntil = Date.now() + 8000;
+            }
+          } else {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            dirDown = true;
+            pauseUntil = Date.now() + 9000;
+          }
+        }
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+
+      async function init() {
+        if (isDemo) document.getElementById("hint").hidden = false;
+        try {
+          await withTimeout(store.init(), 20000);
+          if (isDemo && new URLSearchParams(location.search).has("seed")) await store.seed();
+          store.onPoll((p) => {
+            poll = p;
+            schedule();
+          });
+          store.onSubmissions((list) => {
+            subs = list.filter((s) => s && s.answers);
+            if (poll) poll.submissionCount = Math.max(poll.submissionCount || 0, subs.length);
+            schedule();
+          });
+        } catch (e) {
+          console.error(e);
+          root.innerHTML = `<div class="notice"><strong>Нет подключения к данным.</strong> ${esc((e && (e.code || e.message)) || e)}</div>`;
+        }
+      }
+      init();
+      })();
+    </script>
+  </body>
+</html>
