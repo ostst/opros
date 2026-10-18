@@ -450,8 +450,10 @@
 
     <script src="../assets/firebase-config.js"></script>
     <script src="assets/tl-questions.js"></script>
-    <script type="module">
-      import { QUESTIONS, store, isDemo, esc, plural, isAnswered, cleanAnswers } from "./assets/tl-core.js";
+    <script src="assets/tl-core.js"></script>
+    <script>
+      (function () {
+      const { QUESTIONS, store, isDemo, esc, plural, isAnswered, cleanAnswers, withTimeout, isLocalFile } = window.TL;
 
       const S = window.TL_SURVEY;
       const root = document.getElementById("root");
@@ -795,8 +797,12 @@
 
       async function init() {
         if (isDemo) document.getElementById("demo-badge").hidden = false;
+        if (isLocalFile) {
+          document.getElementById("demo-badge").textContent = "Предпросмотр";
+          document.querySelector(".foot").textContent = "Файл открыт с компьютера: это предпросмотр, ответы не уходят в базу. Рабочая версия — по ссылке на GitHub.";
+        }
         try {
-          await store.init();
+          await withTimeout(store.init(), 20000);
           mine = await store.getMine();
           store.onPoll((p) => {
             const changed = !poll || poll.status !== p.status;
@@ -826,6 +832,7 @@
         }
       }
       init();
+      })();
     </script>
   </body>
 </html>
