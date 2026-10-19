@@ -227,6 +227,44 @@
         color: var(--muted);
         text-align: center;
       }
+      /* Итоги: всё на одном экране */
+      body.is-results .hint { display: none; }
+      .b-head { display: flex; align-items: center; justify-content: space-between; gap: 2vw; margin-bottom: 1.6vh; }
+      .b-head h1 { margin: 0; font-size: 2.3rem; line-height: 1.1; color: var(--navy); letter-spacing: -0.01em; }
+      .b-stats { display: flex; align-items: center; gap: 2vw; }
+      .b-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.6vh 1.4vw; }
+      .b-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2.2vh 1.6vw; box-shadow: 0 4px 24px rgba(28,31,38,.06); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+      .b-card.wide { grid-column: span 2; }
+      .b-card h3 { margin: 0 0 1.4vh; font-size: 1.35rem; line-height: 1.25; color: var(--navy); font-weight: 700; }
+      .b-rows { display: flex; flex-direction: column; justify-content: space-around; gap: 1.4vh; flex: 1; }
+      .b-row { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: baseline; gap: .5vh 1vw; }
+      .b-label { font-size: 1.1rem; color: var(--text-2); line-height: 1.25; }
+      .b-pct { font-size: 1.7rem; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; line-height: 1; }
+      .b-track { grid-column: 1 / -1; height: 1.1vh; min-height: 8px; border-radius: 999px; background: rgba(43,44,132,.1); overflow: hidden; }
+      .b-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--navy), #5a5cb8); transition: width .6s cubic-bezier(.22,1,.36,1); }
+      .b-row.top .b-track i { background: linear-gradient(90deg, var(--orange), #f2844f); }
+      .b-row.top .b-pct { color: var(--orange); }
+      .rank .b-row { grid-template-columns: auto minmax(0,1fr); gap: .35vh 1vw; }
+      .rank .b-rows { gap: .9vh; }
+      .rank .b-label { font-size: 1.05rem; }
+      .rank .b-pos { font-size: 1.3rem; font-weight: 800; color: var(--muted); width: 1.4em; }
+      .rank .b-row.top .b-pos { color: var(--orange); }
+      .b-empty { text-align: center; padding: 10vh 0; font-size: 2rem; color: var(--muted); }
+      @media (min-width: 900px) {
+        body.is-results { overflow: hidden; }
+        html:has(body.is-results) { font-size: clamp(12px, min(1.55vh, 0.95vw), 44px); }
+        body.is-results .shell { height: 100dvh; display: flex; flex-direction: column; padding-top: 2.5vh; padding-bottom: 2.5vh; }
+        body.is-results .top { margin-bottom: 1.5vh; }
+        body.is-results main { flex: 1; min-height: 0; }
+        body.is-results .board { height: 100%; display: flex; flex-direction: column; }
+        body.is-results .b-grid { flex: 1; min-height: 0; grid-template-rows: repeat(2, minmax(0, 1fr)); }
+      }
+      @media (max-width: 899px) {
+        .b-grid { grid-template-columns: 1fr; }
+        .b-card.wide { grid-column: auto; }
+        .b-head { flex-wrap: wrap; }
+        .b-head h1 { font-size: 1.6rem; }
+      }
     </style>
   </head>
   <body>
@@ -289,26 +327,59 @@
             <p class="lead">${open ? "Отсканируйте QR-код камерой телефона и ответьте на несколько вопросов. Это займёт около 5 минут." : "Приём ответов завершён. Спасибо всем, кто принял участие!"}</p>
             <div class="counter"><b id="cnt">${n}</b><span>${plural(n, "участник прошёл опрос", "участника прошли опрос", "участников прошли опрос")}</span></div>
           </div>
-          ${open ? `<div class="qr-card"><div class="qr-box">${qrSvg(url)}</div><p>Наведите камеру телефона</p><small>${esc(url.replace(/^https?:\/\//, ""))}</small></div>` : ""}
+          ${open ? `<div class="qr-card"><div class="qr-box">${qrSvg(url)}</div><p>Наведите камеру телефона</p></div>` : ""}
         </section>`;
       }
+
+      const SHORT = {
+        volume: "Комфортный объём программы",
+        cases: "Нужны ли сквозные проекты и кейсы",
+        installment: "Готовы рассматривать рассрочку",
+        format: "Предпочтительный формат обучения",
+        priority: "Что важнее при выборе программы",
+      };
+      const ORDER = ["volume", "cases", "installment", "format", "priority"];
 
       function renderResults() {
         const n = subs.length;
         const open = poll.status !== "closed";
-        const agg = aggregate(subs);
-        const html = `<section>
-          <div class="res-head">
-            <div><p class="kicker">Результаты опроса</p><h1>${esc(S.welcome.title)}</h1></div>
-            <div class="res-stats">
+        const agg = aggregate(subs).filter((r) => r.q.type === "single" || r.q.type === "multi" || r.q.type === "rank");
+        agg.sort((x, y) => (ORDER.indexOf(x.q.id) + 99) % 99 - (ORDER.indexOf(y.q.id) + 99) % 99);
+        const cards = agg
+          .map((r) => {
+            const title = SHORT[r.q.id] || r.q.title;
+            let rows = "";
+            if (r.q.type === "rank") {
+              const best = r.items[0] ? r.items[0].score : 0;
+              rows = r.items
+                .map((it, k) => {
+                  const w = best && r.answered ? (it.score / best) * 100 : 0;
+                  return `<div class="b-row${k === 0 && r.answered ? " top" : ""}"><span class="b-pos">${k + 1}</span><span class="b-label">${esc(it.label)}</span><span class="b-track"><i style="width:${w}%"></i></span></div>`;
+                })
+                .join("");
+            } else {
+              const max = Math.max(0, ...r.items.map((i) => i.count));
+              rows = r.items
+                .map((it) => {
+                  const p = Math.round(it.share * 100);
+                  const w = max ? (it.count / max) * 100 : 0;
+                  return `<div class="b-row${it.count && it.count === max ? " top" : ""}"><span class="b-label">${esc(it.label)}</span><span class="b-pct">${p}%</span><span class="b-track"><i style="width:${w}%"></i></span></div>`;
+                })
+                .join("");
+            }
+            return `<article class="b-card${r.q.type === "rank" ? " wide rank" : ""}"><h3>${esc(title)}</h3><div class="b-rows">${rows}</div></article>`;
+          })
+          .join("");
+        root.innerHTML = `<section class="board">
+          <div class="b-head">
+            <h1>Итоги опроса</h1>
+            <div class="b-stats">
               <div class="stat"><b>${n}</b><span>${plural(n, "участник", "участника", "участников")}</span></div>
               ${open ? `<div class="mini-qr"><div class="qr-box">${qrSvg(url)}</div><span>Ещё не прошли? Сканируйте</span></div>` : ""}
             </div>
           </div>
-          <div class="r-grid">${resultsHtml(agg, { quoteLimit: 4 })}</div>
+          ${n ? `<div class="b-grid">${cards}</div>` : `<div class="b-empty">Ждём первые ответы…</div>`}
         </section>`;
-        // Сохраняем ширины полос для плавной анимации
-        root.innerHTML = html;
       }
 
       function render() {
@@ -319,6 +390,7 @@
         const m = poll.showResults ? "results" : "wait";
         if (m !== mode) window.scrollTo(0, 0);
         mode = m;
+        document.body.classList.toggle("is-results", m === "results");
         if (m === "results") renderResults();
         else renderWait();
       }
@@ -332,40 +404,6 @@
           render();
         });
       }
-
-      /* Плавная автопрокрутка на большом экране, если результаты не помещаются */
-      let pauseUntil = Date.now() + 6000;
-      let dirDown = true;
-      ["wheel", "touchstart", "keydown", "mousedown"].forEach((e) =>
-        window.addEventListener(e, () => (pauseUntil = Date.now() + 60000), { passive: true })
-      );
-      let lastT = performance.now();
-      let acc = 0;
-      function tick(t) {
-        const dt = Math.min(100, t - lastT);
-        lastT = t;
-        const max = document.documentElement.scrollHeight - innerHeight;
-        if (mode === "results" && max > 40 && Date.now() > pauseUntil) {
-          if (dirDown) {
-            acc += (dt / 1000) * Math.max(28, innerHeight / 30);
-            const step = Math.floor(acc);
-            if (step) {
-              acc -= step;
-              window.scrollTo(0, Math.min(max, scrollY + step));
-            }
-            if (scrollY >= max - 1) {
-              dirDown = false;
-              pauseUntil = Date.now() + 8000;
-            }
-          } else {
-            window.scrollTo({ top: 0, behavior: "smooth" });
-            dirDown = true;
-            pauseUntil = Date.now() + 9000;
-          }
-        }
-        requestAnimationFrame(tick);
-      }
-      requestAnimationFrame(tick);
 
       async function init() {
         if (isDemo) document.getElementById("hint").hidden = false;
