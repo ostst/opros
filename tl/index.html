@@ -723,13 +723,6 @@
             }
             root.querySelectorAll(".option").forEach((o) => o.setAttribute("aria-checked", String(sel.includes(+o.dataset.i))));
             refreshNext(q);
-            // Один вариант без поля «Другое» — переходим дальше сами
-            if (!multi && i !== -1 && step < QUESTIONS.length - 1) {
-              clearTimeout(window.__adv);
-              window.__adv = setTimeout(() => {
-                if (QUESTIONS[step] === q) go(1);
-              }, 320);
-            }
           });
         });
         const other = document.getElementById("other");
@@ -794,6 +787,15 @@
         }
         sending = false;
       }
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" || e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+        const next = document.getElementById("next");
+        if (next && !next.disabled && !e.target.closest(".option")) {
+          e.preventDefault();
+          next.click();
+        }
+      });
 
       async function init() {
         if (isDemo) document.getElementById("demo-badge").hidden = false;
