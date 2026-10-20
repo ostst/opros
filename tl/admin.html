@@ -325,7 +325,7 @@
             <h2>Ход опроса</h2>
             <div class="kpis">
               <div class="kpi"><b id="k-sub">0</b><span>отправили анкету</span></div>
-              <div class="kpi"><b id="k-vis">0</b><span>открыли по QR-коду</span></div>
+              <div class="kpi"><b id="k-vis">0</b><span>открыли анкету</span></div>
               <div class="kpi"><b id="k-conv">—</b><span>дошли до конца</span></div>
             </div>
             <div style="margin-top: 22px">
@@ -526,6 +526,7 @@
         });
 
         try {
+          store.watchVisitors = true;
           await withTimeout(store.init(), 20000);
           if (isDemo && new URLSearchParams(location.search).has("seed")) await store.seed();
           store.onPoll((p) => {
