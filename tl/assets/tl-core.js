@@ -316,29 +316,49 @@ function createFirebaseStore() {
       return s.exists() ? s.data() : null;
     },
     async submit(answers) {
+      // Пишем только собственный документ участника: без общего счётчика,
+      // чтобы при одновременной отправке многими людьми не было конфликтов.
       const ref = fs.doc(subsCol, store.uid);
-      const ex = await fs.getDoc(ref);
-      if (ex.exists()) throw new Error("__already__");
-      const batch = fs.writeBatch(db);
-      batch.set(ref, { answers, t: Date.now(), createdAt: fs.serverTimestamp() });
-      batch.update(pollRef, { submissionCount: fs.increment(1) });
-      await batch.commit();
+      const data = { answers, t: Date.now(), createdAt: fs.serverTimestamp() };
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      let lastErr = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          if (attempt > 0) {
+            const ex = await fs.getDoc(ref);
+            if (ex.exists()) return; // предыдущая попытка всё-таки дошла
+          }
+          await fs.setDoc(ref, data);
+          return;
+        } catch (e) {
+          lastErr = e;
+          console.warn("submit attempt", attempt + 1, e);
+          await wait(600 * (attempt + 1) + Math.random() * 600);
+        }
+      }
+      try {
+        const ex = await fs.getDoc(ref);
+        if (ex.exists()) return;
+      } catch (_) {}
+      throw lastErr || new Error("submit failed");
     },
     async trackVisit() {
-      const ref = fs.doc(db, c0, c1, "visitors", store.uid);
       try {
-        await fs.runTransaction(db, async (tx) => {
-          const v = await tx.get(ref);
-          if (v.exists()) return;
-          tx.set(ref, { v: 1 });
-          tx.update(pollRef, { visitorCount: fs.increment(1) });
-        });
+        await fs.setDoc(fs.doc(db, c0, c1, "visitors", store.uid), { v: 1 });
       } catch (e) {
-        console.warn("visit", e);
+        // уже есть — это нормально
       }
     },
     onPoll(cb) {
-      return fs.onSnapshot(pollRef, (d) => cb({ ...DEFAULT_POLL, ...(d.exists() ? d.data() : {}) }), (e) => console.error(e));
+      let pollData = {};
+      let visitors = null;
+      const emit = () => cb({ ...DEFAULT_POLL, ...pollData, ...(visitors == null ? {} : { visitorCount: visitors }) });
+      const u1 = fs.onSnapshot(pollRef, (d) => { pollData = d.exists() ? d.data() : {}; emit(); }, (e) => console.error(e));
+      let u2 = () => {};
+      if (store.watchVisitors) {
+        u2 = fs.onSnapshot(fs.collection(db, c0, c1, "visitors"), (qs) => { visitors = qs.size; emit(); }, (e) => console.error(e));
+      }
+      return () => { u1(); u2(); };
     },
     onMine(cb) {
       return fs.onSnapshot(fs.doc(subsCol, store.uid), (d) => cb(d.exists() ? d.data() : null), (e) => console.error(e));
